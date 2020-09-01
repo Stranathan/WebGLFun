@@ -4,7 +4,7 @@ precision highp float;
 
 in vec3 vertexPos;
 
-void main() 
+void main()
 {
     gl_Position = vec4(vertexPos, 1.0);
 }
@@ -18,6 +18,8 @@ out vec4 fragColor;
 uniform float time;
 uniform vec2 resolution;
 uniform vec3 circlePositions[19];
+uniform vec3 circleColors[19];
+
 
 #define sqrt3 (1.7321)
 
@@ -25,17 +27,20 @@ float circle(vec2 uv, vec3 circlePosAndRadius)
 {
     return (1. - smoothstep(circlePosAndRadius.z, circlePosAndRadius.z + 0.01, length(uv - circlePosAndRadius.xy)));
 }
-void main() 
+void main()
 {
-    vec2 uv = 2. * ( gl_FragCoord.xy -.5*resolution.xy ) / resolution.y;
-    
-    float circles = 0.;
+    vec2 uv = 2. * ( gl_FragCoord.xy -.5 * resolution.xy ) / resolution.y;
+
+    float circleMask = 0.;
+    vec3 col = vec3(0.);
     for(int i = 0; i < 19; i++)
     {
         float circ = circle(uv, circlePositions[i]);
-        circles += circ;
+        circleMask += circ;
+        vec3 tmpCol = circ * circleColors[i];
+        col += tmpCol;
     }
-    vec3 col = (0.5 + 0.5*cos(time+uv.xyx+vec3(0,2,4))) * circles;
+    col += (0.5 + uv.xyx * vec3(0.2 * cos(time), 0.4 * cos(time), 0.3 * sin(time)))* (1. - circleMask);;
     fragColor = vec4(col,1.0);
 }
 `

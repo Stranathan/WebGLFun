@@ -1,10 +1,10 @@
 "use strict";
 
-function main() 
+function main()
 {
     var canvas = document.getElementById("cc");
     var gl = canvas.getContext("webgl2");
-    if (!gl) 
+    if (!gl)
     {
         return;
     }
@@ -21,8 +21,14 @@ function main()
     var resolutionUniformLocation = gl.getUniformLocation(program, "resolution");
     var timeUniformLocation = gl.getUniformLocation(program, "time");
     var circlePositionsUniformLocation = gl.getUniformLocation(program, "circlePositions");
+    var circleColorsUniformLocation = gl.getUniformLocation(program, "circleColors");
 
-    // -------------- board VAO Init -------------- 
+    // -------------- Event handling Init --------------
+    canvas.addEventListener('click',(event) =>
+    {
+      console.log('clicked');
+    });
+    // -------------- board VAO Init --------------
     var vao = gl.createVertexArray();
     var positionBuffer = gl.createBuffer();
 
@@ -30,8 +36,8 @@ function main()
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
     // 0, 1, 2
-    // 0, 2, 3  
-    var positions = 
+    // 0, 2, 3
+    var positions =
     [
         -1, +1, 0,
         -1, -1, 0,
@@ -43,15 +49,15 @@ function main()
     ];
 
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-    var size = 3;          
-    var type = gl.FLOAT;   
-    var normalize = false; 
+    var size = 3;
+    var type = gl.FLOAT;
+    var normalize = false;
     var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
     var offset = 0;        // start at the beginning of the buffer
 
     gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
     gl.enableVertexAttribArray(positionAttributeLocation);
-   
+
     // -------------- Init Draw State --------------
     resize(gl.canvas);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -61,11 +67,11 @@ function main()
     gl.useProgram(program);
     gl.bindVertexArray(vao);
 
-    // -------------- Circles Init -------------- 
+    // -------------- Circles Init --------------
     var circlePositions = [];
-    
+    var circleColors = [];
+
     let radius = 0.15;
-    let circleOffset = 0.0455;
     let theta = 0;
     for(let i = 0; i < 19; i++)
     {
@@ -74,30 +80,43 @@ function main()
             circlePositions.push(0); // x
             circlePositions.push(0); // y
             circlePositions.push(radius); // radius
+
+            circleColors.push(1.);
+            circleColors.push(1.);
+            circleColors.push(1.);
         }
         else if(i < 7)
         {
-            circlePositions.push(Math.cos(theta) * 2 * radius ); // x
-            circlePositions.push(Math.sin(theta) * 2 * radius ); // y
+            circlePositions.push(Math.cos(theta) * 2.1 * radius ); // x
+            circlePositions.push(Math.sin(theta) * 2.1 * radius ); // y
             circlePositions.push(radius); // radius
-            theta += Math.PI / 3; // increment by 
+            theta += Math.PI / 3; // increment by
+
+            circleColors.push(1.);
+            circleColors.push(1.);
+            circleColors.push(1.);
         }
         else{
             if(i == 7)
             {
-                theta += -Math.PI / 6 + 15 * Math.PI / 180;
+                theta += -Math.PI / 12; // + 15 * Math.PI / 180;
             }
-            circlePositions.push(Math.cos(theta) * 4 * (.96 * radius)); // x
-            circlePositions.push(Math.sin(theta) * 4 * (.96 * radius)); // y
+            circlePositions.push(Math.cos(theta) * 4.1 * (radius)); // x
+            circlePositions.push(Math.sin(theta) * 4.1 * (radius)); // y
             circlePositions.push(radius); // radius
             theta += Math.PI / 6;
+
+
+            circleColors.push(Math.round(Math.random()));
+            circleColors.push(Math.round(Math.random()));
+            circleColors.push(Math.round(Math.random()));
         }
     }
-    let circlesFloat32Arr = new Float32Array(circlePositions);
-    
+
     // -------------- Static Uniforms --------------
     gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
-    gl.uniform3fv(circlePositionsUniformLocation, circlesFloat32Arr);
+    gl.uniform3fv(circlePositionsUniformLocation, circlePositions);
+    gl.uniform3fv(circleColorsUniformLocation, circleColors);
 
     // -------------- Draw Type --------------
     var primitiveType = gl.TRIANGLES;
