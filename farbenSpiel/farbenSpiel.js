@@ -1,5 +1,9 @@
 "use strict";
 
+// TO DO
+// remove magic numbers for radius buffers
+// 2.1, 4.1, 26.6
+
 function main()
 {
     var canvas = document.getElementById("cc");
@@ -23,10 +27,177 @@ function main()
     var circlePositionsUniformLocation = gl.getUniformLocation(program, "circlePositions");
     var circleColorsUniformLocation = gl.getUniformLocation(program, "circleColors");
 
+    // -------------- Circles Init --------------
+    var circlePositions = [];
+    var circleColors = [];
+
+    let radius = 0.15;
+    let theta = 0;
+    for(let i = 0; i < 19; i++)
+    {
+        if(i == 0)
+        {
+            circlePositions.push(0); // x
+            circlePositions.push(0); // y
+            circlePositions.push(radius); // radius
+
+            circleColors.push(0.);
+            circleColors.push(0.);
+            circleColors.push(0.);
+        }
+        else if(i < 7)
+        {
+            circlePositions.push(Math.cos(theta) * 2.1 * radius ); // x
+            circlePositions.push(Math.sin(theta) * 2.1 * radius ); // y
+            circlePositions.push(radius); // radius
+            theta += Math.PI / 3; // increment by
+
+            circleColors.push(Math.random());
+            circleColors.push(Math.random());
+            circleColors.push(Math.random());
+        }
+        else{
+            if(i == 7)
+            {
+                theta += -Math.PI / 12; // + 15 * Math.PI / 180;
+            }
+            circlePositions.push(Math.cos(theta) * 4.1 * (radius)); // x
+            circlePositions.push(Math.sin(theta) * 4.1 * (radius)); // y
+            circlePositions.push(radius); // radius
+            theta += Math.PI / 6;
+
+
+            circleColors.push(Math.random());
+            circleColors.push(Math.random());
+            circleColors.push(Math.random());
+        }
+    }
+
     // -------------- Event handling Init --------------
+    var clickCount = 0;
+    var selectedCircleIndex = null;
+
     canvas.addEventListener('click',(event) =>
     {
-      console.log('clicked');
+        // NDC mouse coords
+        let xx = 2. * ( event.clientX - .5 * gl.canvas.width ) / gl.canvas.height;
+        let yy = -2. * ( event.clientY - .5 * gl.canvas.height ) / gl.canvas.height;
+        
+        // lots of ways of doing this I think, so let's just pick one.
+        // order of packed circles is static, so we can narrow search based on 
+        // if it's in the outer or inner ring
+        let dist = Math.sqrt(xx * xx + yy * yy);
+        let packedCircleRadius = Math.sqrt(2 * 4.1 * radius);
+        if(dist <= packedCircleRadius && circlePositions.length != 0)
+        {
+            
+            let angle = Math.asin(yy / dist);
+            let pi = Math.PI; // just an alias
+            console.log(angle * 180 / Math.PI);
+            // if less than radius, must be [0]
+            if(dist <= radius)
+            {
+                console.log("clicked number 0");
+            }
+            // else if less than outer ring, must be [1, 7]
+            else if(dist <= 3 * radius && dist > radius)
+            {
+                // cut into two halves because the aliased return value of asin
+                if( xx > 0)
+                {
+                    console.log("clicked inner ring and x is positve");
+                    if(angle > -pi / 2 && angle < -pi / 6)
+                    {
+                        console.log("clicked circle 6");
+                    }
+                    else if(angle > -pi / 6 && angle < pi / 6)
+                    {
+                        console.log("clicked circle 1");
+                    }
+                    else
+                    {
+                        console.log("clicked circle 2");
+                    }
+                }
+                else
+                {
+                    console.log("clicked inner ring and x is negative");
+                    if(angle > -pi / 2 && angle < -pi / 6)
+                    {
+                        console.log("clicked circle 5");
+                    }
+                    else if(angle > -pi / 6 && angle < pi / 6)
+                    {
+                        console.log("clicked circle 4");
+                    }
+                    else
+                    {
+                        console.log("clicked circle 3");
+                    }
+                }
+            }
+            // else in outer ring, must be in [7, 19]
+            else
+            {
+                // cut into two halves because the aliased return value of asin
+                if( xx > 0)
+                {
+                    console.log("clicked outer ring and x is positve");
+                    if(angle >= -pi / 2 && angle < -pi / 3)
+                    {
+                        console.log("clicked circle 17");
+                    }
+                    else if(angle >= -pi / 3 && angle < -pi / 6)
+                    {
+                        console.log("clicked circle 18");
+                    }
+                    else if(angle >= -pi / 6 && angle < 0)
+                    {
+                        console.log("clicked circle 7");
+                    }
+                    else if(angle >= 0 && angle < pi / 6)
+                    {
+                        console.log("clicked circle 8");
+                    }
+                    else if(angle >= pi / 6 && angle < pi / 3)
+                    {
+                        console.log("clicked circle 9");
+                    }
+                    else
+                    {
+                        console.log("clicked circle 10");
+                    }
+                }
+                else
+                {
+                    console.log("clicked outer ring and x is positve");
+                    if(angle >= -pi / 2 && angle < -pi / 3)
+                    {
+                        console.log("clicked circle 16");
+                    }
+                    else if(angle >= -pi / 3 && angle < -pi / 6)
+                    {
+                        console.log("clicked circle 15");
+                    }
+                    else if(angle >= -pi / 6 && angle < 0)
+                    {
+                        console.log("clicked circle 14");
+                    }
+                    else if(angle >= 0 && angle < pi / 6)
+                    {
+                        console.log("clicked circle 13");
+                    }
+                    else if(angle >= pi / 6 && angle < pi / 3)
+                    {
+                        console.log("clicked circle 12");
+                    }
+                    else
+                    {
+                        console.log("clicked circle 11");
+                    }
+                }
+            }
+        }
     });
     // -------------- board VAO Init --------------
     var vao = gl.createVertexArray();
@@ -66,52 +237,6 @@ function main()
 
     gl.useProgram(program);
     gl.bindVertexArray(vao);
-
-    // -------------- Circles Init --------------
-    var circlePositions = [];
-    var circleColors = [];
-
-    let radius = 0.15;
-    let theta = 0;
-    for(let i = 0; i < 19; i++)
-    {
-        if(i == 0)
-        {
-            circlePositions.push(0); // x
-            circlePositions.push(0); // y
-            circlePositions.push(radius); // radius
-
-            circleColors.push(1.);
-            circleColors.push(1.);
-            circleColors.push(1.);
-        }
-        else if(i < 7)
-        {
-            circlePositions.push(Math.cos(theta) * 2.1 * radius ); // x
-            circlePositions.push(Math.sin(theta) * 2.1 * radius ); // y
-            circlePositions.push(radius); // radius
-            theta += Math.PI / 3; // increment by
-
-            circleColors.push(1.);
-            circleColors.push(1.);
-            circleColors.push(1.);
-        }
-        else{
-            if(i == 7)
-            {
-                theta += -Math.PI / 12; // + 15 * Math.PI / 180;
-            }
-            circlePositions.push(Math.cos(theta) * 4.1 * (radius)); // x
-            circlePositions.push(Math.sin(theta) * 4.1 * (radius)); // y
-            circlePositions.push(radius); // radius
-            theta += Math.PI / 6;
-
-
-            circleColors.push(Math.round(Math.random()));
-            circleColors.push(Math.round(Math.random()));
-            circleColors.push(Math.round(Math.random()));
-        }
-    }
 
     // -------------- Static Uniforms --------------
     gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
