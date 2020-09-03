@@ -19,7 +19,7 @@ uniform float time;
 uniform vec2 resolution;
 uniform vec3 circlePositions[19];
 uniform vec3 circleColors[19];
-
+uniform vec4 selectedCircle; // [x, y, radius, circleIndex]
 
 #define sqrt3 (1.7321)
 
@@ -40,6 +40,11 @@ void main()
         vec3 tmpCol = circ * circleColors[i];
         col += tmpCol;
     }
+
+    float selectionMask = circle(uv, selectedCircle.xyz) * (1. - circle(uv, circlePositions[int(selectedCircle.w)]));
+    col += selectionMask * vec3(.9, .8, .2) + selectionMask * abs(sin(1.8 * time)) * vec3(.45, .4, .1);
+    circleMask += selectionMask;
+
     col += (0.5 + uv.xyx * vec3(0.2 * cos(time), 0.4 * cos(time), 0.3 * sin(time)))* (1. - circleMask);;
     fragColor = vec4(col,1.0);
 }

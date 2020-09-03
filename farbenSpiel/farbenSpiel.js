@@ -26,10 +26,12 @@ function main()
     var timeUniformLocation = gl.getUniformLocation(program, "time");
     var circlePositionsUniformLocation = gl.getUniformLocation(program, "circlePositions");
     var circleColorsUniformLocation = gl.getUniformLocation(program, "circleColors");
+    var selectedCircleUniformLocation = gl.getUniformLocation(program, "selectedCircle");
 
     // -------------- Circles Init --------------
     var circlePositions = [];
     var circleColors = [];
+    var selectedCircle = [10, 10, 0.01, 0]; // hackish, draw offscreen, change me
 
     let radius = 0.15;
     let theta = 0;
@@ -74,54 +76,90 @@ function main()
     }
 
     // -------------- Event handling Init --------------
-    var clickCount = 0;
-    var selectedCircleIndex = null;
+
+    var clickedIndex = null;
 
     canvas.addEventListener('click',(event) =>
     {
         // NDC mouse coords
         let xx = 2. * ( event.clientX - .5 * gl.canvas.width ) / gl.canvas.height;
         let yy = -2. * ( event.clientY - .5 * gl.canvas.height ) / gl.canvas.height;
-        
+
         // lots of ways of doing this I think, so let's just pick one.
-        // order of packed circles is static, so we can narrow search based on 
+        // order of packed circles is static, so we can narrow search based on
         // if it's in the outer or inner ring
         let dist = Math.sqrt(xx * xx + yy * yy);
         let packedCircleRadius = Math.sqrt(2 * 4.1 * radius);
+
         if(dist <= packedCircleRadius && circlePositions.length != 0)
         {
-            
+
             let angle = Math.asin(yy / dist);
             let pi = Math.PI; // just an alias
-            console.log(angle * 180 / Math.PI);
+
             // if less than radius, must be [0]
             if(dist <= radius)
             {
-                console.log("clicked number 0");
+                console.log("clicked on circle 0");
             }
+            // ----- INNER RING -----
             // else if less than outer ring, must be [1, 7]
             else if(dist <= 3 * radius && dist > radius)
             {
                 // cut into two halves because the aliased return value of asin
                 if( xx > 0)
                 {
-                    console.log("clicked inner ring and x is positve");
                     if(angle > -pi / 2 && angle < -pi / 6)
                     {
-                        console.log("clicked circle 6");
+                        console.log("clicked on 6");
+
+                        if(clickedIndex == null)
+                        {
+                            clickedIndex = 6;
+                        }
+                        else
+                        {
+                            clickedIndex = null;
+                        }
+                        console.log("clickedIndex = " + clickedIndex);
                     }
                     else if(angle > -pi / 6 && angle < pi / 6)
                     {
-                        console.log("clicked circle 1");
+                        console.log("clicked on circle 1");
+                        if(clickedIndex == null)
+                        {
+                            clickedIndex = 1;
+                            selectedCircle = [circlePositions[clickedIndex * 3],
+                                              circlePositions[clickedIndex * 3 + 1],
+                                              1.1 * circlePositions[clickedIndex * 3 + 2],
+                                              clickedIndex];
+                        }
+                        else
+                        {
+                            selectedCircle = [10, 10, 0.01, 0] // off screen
+                            clickedIndex = null;
+                        }
                     }
                     else
                     {
                         console.log("clicked circle 2");
+                        if(clickedIndex == null)
+                        {
+                            clickedIndex = 2;
+                            selectedCircle = [circlePositions[clickedIndex * 3],
+                                              circlePositions[clickedIndex * 3 + 1],
+                                              1.1 * circlePositions[clickedIndex * 3 + 2],
+                                              clickedIndex];
+                        }
+                        else
+                        {
+                            selectedCircle = [10, 10, 0.01, 0] // off screen
+                            clickedIndex = null;
+                        }
                     }
                 }
                 else
                 {
-                    console.log("clicked inner ring and x is negative");
                     if(angle > -pi / 2 && angle < -pi / 6)
                     {
                         console.log("clicked circle 5");
@@ -142,7 +180,6 @@ function main()
                 // cut into two halves because the aliased return value of asin
                 if( xx > 0)
                 {
-                    console.log("clicked outer ring and x is positve");
                     if(angle >= -pi / 2 && angle < -pi / 3)
                     {
                         console.log("clicked circle 17");
@@ -170,7 +207,6 @@ function main()
                 }
                 else
                 {
-                    console.log("clicked outer ring and x is positve");
                     if(angle >= -pi / 2 && angle < -pi / 3)
                     {
                         console.log("clicked circle 16");
@@ -238,10 +274,11 @@ function main()
     gl.useProgram(program);
     gl.bindVertexArray(vao);
 
-    // -------------- Static Uniforms --------------
+    // -------------- Init Uniforms --------------
     gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
     gl.uniform3fv(circlePositionsUniformLocation, circlePositions);
     gl.uniform3fv(circleColorsUniformLocation, circleColors);
+    gl.uniform4fv(selectedCircleUniformLocation, selectedCircle);
 
     // -------------- Draw Type --------------
     var primitiveType = gl.TRIANGLES;
@@ -266,6 +303,8 @@ function main()
         seconds += deltaTime;
 
         gl.uniform1f(timeUniformLocation, seconds);
+        gl.uniform3fv(circleColorsUniformLocation, circleColors);
+        gl.uniform4fv(selectedCircleUniformLocation, selectedCircle);
 
         // draw
         gl.drawArrays(primitiveType, offset, vertCount);
