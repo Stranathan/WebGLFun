@@ -16,6 +16,7 @@ precision highp float;
 out vec4 fragColor;
 
 uniform float time;
+uniform vec2 juiceSelection;
 uniform vec2 resolution;
 uniform vec3 circlePositions[19];
 uniform vec3 circleColors[19];
@@ -41,11 +42,14 @@ void main()
         col += tmpCol;
     }
 
-    float selectionMask = circle(uv, selectedCircle.xyz) * (1. - circle(uv, circlePositions[int(selectedCircle.w)]));
-    col += selectionMask * vec3(.9, .8, .2) + selectionMask * abs(sin(1.8 * time)) * vec3(.45, .4, .1);
-    circleMask += selectionMask;
+    float selectedCircleMask = circle(uv, circlePositions[int(selectedCircle.w)]);
+    float colorCombiningCircleMask = circle(uv, circlePositions[int(juiceSelection.y)]);
+    float selectionRingMask = circle(uv, selectedCircle.xyz) * (1. - selectedCircleMask);
+    float dropOff = exp(-(25. * juiceSelection.x * juiceSelection.x));
 
-    col += (0.5 + uv.xyx * vec3(0.2 * cos(time), 0.4 * cos(time), 0.3 * sin(time)))* (1. - circleMask);;
+    col += selectionRingMask * vec3(.9, .8, .2) + dropOff * colorCombiningCircleMask;
+    // background
+    col += (0.5 + uv.xyx * vec3(0.2 * cos(0.25 * time), 0.4 * cos(time), 0.3 * sin(time)))* (1. - circleMask);
     fragColor = vec4(col,1.0);
 }
 `
