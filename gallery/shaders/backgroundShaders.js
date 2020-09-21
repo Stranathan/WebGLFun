@@ -1,4 +1,4 @@
-var galleryVS = `#version 300 es
+var backgroundShadersVS = `#version 300 es
 
 precision highp float;
 
@@ -9,7 +9,7 @@ void main()
     gl_Position = vec4(vertexPos, 1.0);
 }
 `
-var galleryFS = `#version 300 es
+var backgroundShadersFS = `#version 300 es
 
 precision highp float;
 
