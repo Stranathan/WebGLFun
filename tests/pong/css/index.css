@@ -1,0 +1,21 @@
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  /* This centers our sketch horizontally. */
+  justify-content: center;
+  /* This centers our sketch vertically. */
+  align-items: center;
+}
+
+#canvasHolder{
+  /* background-color: pink; */
+  width: 70%;
+  height: 70%;
+}
+#leCanvas{
+  background-color:rgba(40,40,40,0.9);} /* blue with opacity */
+}

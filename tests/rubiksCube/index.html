@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Rubiks Cube</title>
+    <!-- css -->
+    <link rel="stylesheet" href="css/rubiksCube.css">
+    <!-- matrix and vector library -->
+    <script src="middleware/gl-matrix-min.js"></script>
+    <!-- my utils -->
+    <script src="utils/glUtils.js"></script>
+    <script src="utils/misc.js"></script>
+    <script src="rendering/geometry.js"></script>
+    <script src="rendering/shaders/rubiksCubeShaders.js"></script>
+    <!-- game -->
+    <script src="scripts/cubie.js"></script>
+    <script src="scripts/cubeRotations.js" defer></script>
+    <script src="scripts/rubiksCube.js" defer></script>
+</head>
+
+<body>
+  <div id="content">
+    <div id="canvas-axes-btn-holder">
+      <div id="canvasHolder">
+        <canvas id="leCanvas"></canvas>
+      </div>
+      <div id="axes-btn-holder">
+        <div class="btn-group" id="x-planes">
+          <button class="button x-btn" onclick="x1Rotation()">
+            X 1
+          </button>
+          <button class="button x-btn" onclick="x0Rotation()">X 2</button>
+          <button class="button x-btn" onclick="xNeg1Rotation()">X 3</button>
+        </div>
+        <div class="btn-group" id="y-planes">
+          <button class="button y-btn" onclick="y1Rotation()">Y 1</button>
+          <button class="button y-btn" onclick="y0Rotation()">Y 2</button>
+          <button class="button y-btn" onclick="yNeg1Rotation()">Y 3</button>
+        </div>
+        <div class="btn-group" id="z-planes">
+          <button class="button z-btn" onclick="z1Rotation()">Z 1</button>
+          <button class="button z-btn" onclick="z0Rotation()">Z 2</button>
+          <button class="button z-btn" onclick="zNeg1Rotation()">Z 3</button>
+        </div>
+      </div>
+    </div>
+  </div>
+    <!-- If script isn't deferred, put here, otherwise it would run before the canvas element has been parsed and added to the DOM.-->
+</body>
+</html>

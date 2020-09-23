@@ -1,0 +1,62 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Pong in WebGL</title>
+    <link rel="stylesheet" href="css/index.css">
+    <script src="scripts/paddle.js"></script>
+    <script src="scripts/ball.js"></script>
+    <script src="scripts/steeringPaddle.js"></script>
+    <script src="scripts/glUtils.js"></script>
+    <script src="middleware/gl-matrix-min.js"></script>
+    <script src="scripts/pong.js" defer></script>
+</head>
+
+<body>
+  <div id="canvasHolder">
+    <canvas id="leCanvas"></canvas>
+  </div>
+  <script id="vertex-shader-2d" type="notjs">#version 300 es
+      precision mediump float;
+      //
+      in vec2 aPos;
+      //
+      uniform float iTime;
+      uniform vec2 iResolution;
+      uniform mat4 transform;
+
+      void main()
+      {
+        // get into NDC space
+        vec2 uv = 2. * aPos / iResolution - 1.;
+        // need to compensate for js coordinate convention
+        gl_Position =  transform * vec4(uv * vec2(1., -1.), 0, 1);
+      }
+  </script>
+  <script id="fragment-shader-2d" type="notjs">#version 300 es
+      precision mediump float;
+
+      uniform float iTime;
+      uniform vec2 iResolution;
+      uniform vec2 iMouse;
+
+      out vec4 fragColor;
+      //vec3 col = 0.5 + 0.5*cos(iTime + uv.xyx + vec3(0,2,4));
+      void main()
+      {
+        vec2 uv = 2. * gl_FragCoord.xy/iResolution.xy - 1.;
+        uv *= vec2(1., -1.);
+        uv.x *= iResolution.x / iResolution.y;
+
+        vec2 mousePos = 2. * iMouse.xy/iResolution.xy - 1.;
+        mousePos.x *= iResolution.x / iResolution.y;
+
+        //vec3 col = vec3(0.1, 0.5, 0.93) * sin(length(10. * (uv - mousePos)) - 4. * iTime);
+        vec3 col = 0.5 + 0.5*cos(iTime + uv.xyx + vec3(0,2,4));
+        fragColor = vec4(col, 1.0);
+      }
+  </script>
+  <!-- Must go here, because otherwise it would run before the canvas element has been parsed and added to the DOM.-->
+</body>
+</html>

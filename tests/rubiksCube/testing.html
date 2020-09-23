@@ -1,0 +1,25 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Rubiks Cube</title>
+    <!--  -->
+    <link rel="stylesheet" href="css/rubiksCube.css">
+    <!--  -->
+    <script src="utils/glUtils.js"></script>
+    <script src="utils/misc.js"></script>
+    <script src="middleware/gl-matrix-min.js"></script>
+
+    <script src="rendering/shaders/renderToTextureTestShaders.js"></script>
+    <script src="rendering/geometry.js"></script>
+    <script src="scripts/renderToTextureTest.js" defer></script>
+</head>
+
+<body>
+  <div id="canvasHolder">
+    <canvas id="leCanvas"></canvas>
+  </div>
+  <!-- If script isn't deferred, put here, otherwise it would run before the canvas element has been parsed and added to the DOM.-->
+</body>
+</html>
