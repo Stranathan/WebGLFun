@@ -11,7 +11,7 @@ uniform mat4 perspective;
 void main()
 {
     //gl_Position = perspective * view * model * vec4(vertexPos, 1.0);
-    gl_Position = perspective * view * vec4(vertexPos, 1.0);
+    gl_Position = vec4(vertexPos, 1.0);
 }
 `
 

@@ -6,7 +6,6 @@ var meshVertData = null;
 // file path is a string
 function loadMesh(filePath) 
 {
-
 	var xhttp = new XMLHttpRequest();
 	xhttp.onreadystatechange = function() 
 	{
@@ -40,11 +39,11 @@ function parseMeshString(objMeshString)
     for ( let i = 0 ; i < lines.length ; i++ )
     {
         let elementInLine = lines[i].split(" "); // split line according to spaces
+        
         switch(elementInLine[0])
         {
             case "v":
 				elementInLine.shift(); // remove first element of line
-				elementInLine.shift();
                 for(let ii = 0; ii < elementInLine.length; ii++)
                 {
                     elementInLine[ii] = parseFloat(elementInLine[ii]);
@@ -108,7 +107,9 @@ function parseMeshString(objMeshString)
 
     for(let faceLine = 0; faceLine < faces.length; faceLine++)
     {
-        let tmpArr = [];
+        let tmpVertexArray = [];
+        let tmpTexArray = [];
+        let tmpNormalArray = [];
 
         switch(faces[faceLine].length)
         {
@@ -122,15 +123,27 @@ function parseMeshString(objMeshString)
                 for(let kk = 0; kk < faces[faceLine].length; kk++)
                 {
                     // OBJ indices start at 1, so we have to subtract 1 to index at zero
-                    // I think I need to be careful here because javascript saves everything as a float
-                    let vertPosIndex = Math.round(faces[faceLine][kk][0] - 1);
-                    tmpArr.push(arrayOfVertPositions[vertPosIndex]);
-                    //vertAttribArrayData.push(arrayOfVertTexCoords[vertTexIndex]); // push vert tex
-                    //vertAttribArrayData.push(arrayOfVertNormals[vertNormIndex]); // push vert norm
+                    // javascript saves everything as a float, so you'd think you'd need to round here.. but
+                    let vertPosIndex = faces[faceLine][kk][0] - 1;
+                    let vertTexIndex = faces[faceLine][kk][1] - 1;
+                    let vertNormIndex = faces[faceLine][kk][2] - 1;
+
+                    tmpVertexArray.push(arrayOfVertPositions[vertPosIndex]);
+                    tmpTexArray.push(arrayOfVertTexCoords[vertTexIndex]);
+                    tmpNormalArray.push(arrayOfVertNormals[vertNormIndex]);              
                 }
-                vertAttribArrayData.push(tmpArr[0]);
-                vertAttribArrayData.push(tmpArr[1]);
-                vertAttribArrayData.push(tmpArr[2]);
+                vertAttribArrayData.push(tmpVertexArray[0]);
+                vertAttribArrayData.push(tmpTexArray[0]);
+                vertAttribArrayData.push(tmpNormalArray[0]);
+                
+                vertAttribArrayData.push(tmpVertexArray[1]);
+                vertAttribArrayData.push(tmpTexArray[1]);
+                vertAttribArrayData.push(tmpNormalArray[1]);
+
+                vertAttribArrayData.push(tmpVertexArray[2]);
+                vertAttribArrayData.push(tmpTexArray[2]);
+                vertAttribArrayData.push(tmpNormalArray[2]);
+
                 break;
             case 4:
                 quadCount += 1;
@@ -139,18 +152,38 @@ function parseMeshString(objMeshString)
                 for(let kk = 0; kk < faces[faceLine].length; kk++)
                 {
                     // OBJ indices start at 1, so we have to subtract 1 to index at zero
-                    // I think I need to be careful here because javascript saves everything as floats
-                    let vertPosIndex = Math.round(faces[faceLine][kk][0] - 1);
-                    tmpArr.push(arrayOfVertPositions[vertPosIndex]);
-                    // vertAttribArrayData.push(arrayOfVertTexCoords[vertTexIndex]); // push vert tex
-                    // vertAttribArrayData.push(arrayOfVertNormals[vertNormIndex]); // push vert norm
+                    // javascript saves everything as a float, so you'd think you'd need to round here.. but
+                    let vertPosIndex = faces[faceLine][kk][0] - 1;
+                    let vertTexIndex = faces[faceLine][kk][1] - 1;
+                    let vertNormIndex = faces[faceLine][kk][2] - 1;
+
+                    tmpVertexArray.push(arrayOfVertPositions[vertPosIndex]);
+                    tmpTexArray.push(arrayOfVertTexCoords[vertTexIndex]);
+                    tmpNormalArray.push(arrayOfVertNormals[vertNormIndex]);    
                 }
-                vertAttribArrayData.push(tmpArr[0]);
-                vertAttribArrayData.push(tmpArr[1]);
-                vertAttribArrayData.push(tmpArr[2]);
-                vertAttribArrayData.push(tmpArr[0]);
-                vertAttribArrayData.push(tmpArr[2]);
-                vertAttribArrayData.push(tmpArr[3]);
+                vertAttribArrayData.push(tmpVertexArray[0]);
+                vertAttribArrayData.push(tmpTexArray[0]);
+                vertAttribArrayData.push(tmpNormalArray[0]);
+                
+                vertAttribArrayData.push(tmpVertexArray[1]);
+                vertAttribArrayData.push(tmpTexArray[1]);
+                vertAttribArrayData.push(tmpNormalArray[1]);
+
+                vertAttribArrayData.push(tmpVertexArray[2]);
+                vertAttribArrayData.push(tmpTexArray[2]);
+                vertAttribArrayData.push(tmpNormalArray[2]);
+
+                vertAttribArrayData.push(tmpVertexArray[0]);
+                vertAttribArrayData.push(tmpTexArray[0]);
+                vertAttribArrayData.push(tmpNormalArray[0]);
+
+                vertAttribArrayData.push(tmpVertexArray[2]);
+                vertAttribArrayData.push(tmpTexArray[2]);
+                vertAttribArrayData.push(tmpNormalArray[2]);
+
+                vertAttribArrayData.push(tmpVertexArray[3]);
+                vertAttribArrayData.push(tmpTexArray[3]);
+                vertAttribArrayData.push(tmpNormalArray[3]);
                 break;
         }
     
@@ -161,5 +194,4 @@ function parseMeshString(objMeshString)
     
     var flattenedVertAttribArrayData = vertAttribArrayData.flat();
 	meshVertData = flattenedVertAttribArrayData;
-	console.log(meshVertData);
 }
