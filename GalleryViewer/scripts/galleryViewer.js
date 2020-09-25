@@ -25,7 +25,7 @@ function main()
 
     // ------------------ Make Camera/s ------------------
     var camRadius = 10.;
-    var camPos = vec3.fromValues(camRadius, 2.0, -camRadius);
+    var camPos = vec3.fromValues(camRadius, 15.0, -camRadius);
     var camUp = vec3.fromValues(0.0, 1.0, 0.0); // really world up for gram-schmidt process
     var targetPos = vec3.fromValues(0.0, 0.0, 0.0);
 
@@ -109,6 +109,7 @@ function main()
     loadMesh("../rendering/models/wavefrontOBJ/highResUtahTeapot.txt");
     var model = mat4.create(); // CHANGE ME
     mat4.scale(model, model, [0.5, 0.5, 0.5]);
+    mat4.rotateX(model, model, -Math.PI / 2);
 
     // ------------------ Start Render Loop ------------------
     window.requestAnimationFrame(renderLoop);
