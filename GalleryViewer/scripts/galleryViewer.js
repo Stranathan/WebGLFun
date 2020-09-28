@@ -1,3 +1,22 @@
+/*
+To Do / things I'll forget about otherwise:
+
+# 
+More general means of timing mesh loads with main render loop
+
+#
+how to keep rotation from freaking out
+
+#
+(0.07 * camRadius); 
+clearly, the further away you are the greater the angle between two discretely sample vectors will be
+but need to have a bit more of a think about how to make this feel better
+
+#
+decay spin
+
+*/
+
 "use strict";
 
 // ---------------- glMatrix Lib Aliases ----------------
@@ -24,18 +43,30 @@ function main()
     gl.canvas.height = height;
 
     // ------------------ Make Camera/s ------------------
-    var camRadius = 10.;
-    var camPos = vec3.fromValues(camRadius, 15.0, -camRadius);
+    var camRadius = 20.;
+    var camPos = vec4.fromValues(0, 0, -camRadius, 1.);
     var camUp = vec3.fromValues(0.0, 1.0, 0.0); // really world up for gram-schmidt process
     var targetPos = vec3.fromValues(0.0, 0.0, 0.0);
 
     var view = mat4.create();
-    mat4.lookAt(view, camPos, targetPos, camUp);
+    mat4.lookAt(view, [camPos[0], camPos[1], camPos[2]], targetPos, camUp);
     var projection = mat4.create();
     let fieldOfVision = 0.5 * Math.PI / 2.;
     let aspectRatio = gl.canvas.width / gl.canvas.height;
     mat4.perspective(projection, fieldOfVision, aspectRatio, 1, 50);
 
+    // ------------------ Mouse Picking Functions ------------------
+    var rayCastSwitch = false;
+    var clickRayDirWorld = null;
+    var mouseMoveRotionAxis = vec3.create();
+    var omega = 0;
+    
+    var deltaTime = 0.0167;
+    var spinDecayTimer = 10;
+
+    window.addEventListener('mousedown', function(event) { onMouseDown(event);});
+    window.addEventListener('mousemove', function(event) { onMouseMove(event);});
+    window.addEventListener('mouseup', function(event) { onMouseUp(event);});
 
     // ------------------ Initialize Shader Resources ------------------
     var renderables = []; // list of javascript objects with vao, program, triangle count;
@@ -109,7 +140,9 @@ function main()
     loadMesh("../rendering/models/wavefrontOBJ/highResUtahTeapot.txt");
     var model = mat4.create(); // CHANGE ME
     mat4.scale(model, model, [0.5, 0.5, 0.5]);
+    mat4.translate(model, model, [0, -4., 0.]);
     mat4.rotateX(model, model, -Math.PI / 2);
+    
 
     // ------------------ Start Render Loop ------------------
     window.requestAnimationFrame(renderLoop);
@@ -120,16 +153,22 @@ function main()
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
         // time update
-        let deltaTime = (timeStamp - oldTimeStamp) / 1000; // in seconds
+        deltaTime = (timeStamp - oldTimeStamp) / 1000; // in seconds
         oldTimeStamp = timeStamp;
         seconds += deltaTime;
 
-        // uniforms
-        camPos[0] = 2. * camRadius * Math.cos(seconds);
-        camPos[2] = -2. * camRadius * Math.sin(seconds);
+        // spin effect
+        if(spinDecayTimer < 5)
+        {
+            spinDecayTimer += deltaTime;
+            let decay = omega * 0.5 * Math.exp(-(1 * spinDecayTimer * spinDecayTimer));
+            let rotMat = mat4.create();
+            mat4.rotate(rotMat, rotMat, decay, mouseMoveRotionAxis);
+            vec4.transformMat4(camPos, camPos, rotMat);
+        }
 
         view = mat4.create();
-        mat4.lookAt(view, camPos, targetPos, camUp);
+        mat4.lookAt(view, [camPos[0], camPos[1], camPos[2]], targetPos, camUp);
         projection = mat4.create();
         aspectRatio = gl.canvas.width / gl.canvas.height; // this needn't be done every update, only when resolution is changed
         mat4.perspective(projection, fieldOfVision, aspectRatio, 1, 50);
@@ -137,7 +176,7 @@ function main()
         // check to see if the mesh has loaded and load teapot mesh
         if(teaPotMeshCount == 0 && meshLoadStatus != null)
         {
-            console.log("Mesh Loaded in " + seconds + ", good to send to GPU");
+            //console.log("Mesh Loaded in " + seconds + ", good to send to GPU");
             teaPotMeshCount += 1;
 
             var teaPotShaderProgram = createProgramFromSources(gl, teapotHelloVS, teapotHelloFS);
@@ -223,6 +262,80 @@ function main()
         }
         // restart game loop
         window.requestAnimationFrame(renderLoop);
+    }
+    function onMouseDown(event)
+    {
+        let mouseClickX = event.offsetX;
+        mouseClickX = (2. * mouseClickX / gl.canvas.width - 1.);
+        let mouseClickY = event.offsetY;
+        mouseClickY = -1 * (2. * mouseClickY / gl.canvas.height - 1.);
+
+        // #---------- RAY CASTING -------------#
+        // RAY IN NDC SPACE
+        let ray_clip = vec4.fromValues(mouseClickX, mouseClickY, -1.0, 1.0);
+        let inverseProjectionMatrix = mat4.create();
+        mat4.invert(inverseProjectionMatrix, projection);
+
+        vec4.transformMat4(ray_clip, ray_clip, inverseProjectionMatrix);
+        // we only needed to un-project the x,y part,
+        // so let's manually set the z, w part to mean "forwards, and not a point
+        let ray_eye = vec4.fromValues(ray_clip[0], ray_clip[1], -1.0, 0.0);
+
+        let inverseViewMatrix = mat4.create();
+        mat4.invert(inverseViewMatrix, view);
+        let tmp = vec4.create();
+        vec4.transformMat4(tmp, ray_eye, inverseViewMatrix);
+        clickRayDirWorld = vec3.fromValues(tmp[0], tmp[1], tmp[2]);
+        clickRayDirWorld = vec3.normalize(clickRayDirWorld, clickRayDirWorld);  
+        rayCastSwitch = true;
+    }
+    function onMouseMove(event)
+    {
+        if(rayCastSwitch == true)
+        {
+            let mousePosX = event.offsetX;
+            mousePosX = (2. * mousePosX / gl.canvas.width - 1.);
+            let mousePosY = event.offsetY;
+            mousePosY = -1 * (2. * mousePosY / gl.canvas.height - 1.);
+
+            // #---------- RAY CASTING -------------#
+            // RAY IN NDC SPACE
+            let ray_clip = vec4.fromValues(mousePosX, mousePosY, -1.0, 1.0);
+            let inverseProjectionMatrix = mat4.create();
+            mat4.invert(inverseProjectionMatrix, projection);
+
+            vec4.transformMat4(ray_clip, ray_clip, inverseProjectionMatrix);
+            // we only needed to un-project the x,y part,
+            // so let's manually set the z, w part to mean "forwards, and not a point
+            let ray_eye = vec4.fromValues(ray_clip[0], ray_clip[1], -1.0, 0.0);
+
+            let inverseViewMatrix = mat4.create();
+            mat4.invert(inverseViewMatrix, view);
+            let tmp = vec4.create();
+            vec4.transformMat4(tmp, ray_eye, inverseViewMatrix);
+            let rayDirWorld = vec3.fromValues(tmp[0], tmp[1], tmp[2]);
+            rayDirWorld = vec3.normalize(rayDirWorld, rayDirWorld);
+
+            let angle = vec3.angle(clickRayDirWorld, rayDirWorld) / (0.07 * camRadius);
+            vec3.cross(mouseMoveRotionAxis, clickRayDirWorld, rayDirWorld);
+            let rotMat = mat4.create();
+
+            mat4.rotate(rotMat, rotMat, angle, mouseMoveRotionAxis);
+            vec4.transformMat4(camPos, camPos, rotMat);
+
+            omega = angle;
+            // we need to get the angle per mouse move, --> set the vector from last
+            // move to this vector so the next mouse move calculation is possible
+            clickRayDirWorld = rayDirWorld;
+        }
+    }
+    function onMouseUp(event)
+    {
+        if(rayCastSwitch == true)
+        {
+            spinDecayTimer = 0;
+            rayCastSwitch = false;
+        }
     }
 }
 

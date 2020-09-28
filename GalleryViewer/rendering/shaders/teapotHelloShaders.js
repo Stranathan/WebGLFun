@@ -36,38 +36,31 @@ uniform vec2 resolution;
 
 void main()
 {
-    vec2 uv = 2. * ( gl_FragCoord.xy -.5 * resolution.xy ) / resolution.y;
+    //vec2 uv = 2. * ( gl_FragCoord.xy -.5 * resolution.xy ) / resolution.y;
     
-    vec3 objectColor = vec3(.694, .612, .851);
-    vec3 to_light;
-    vec3 vertex_normal;
-    vec3 lightColor = vec3(0.7) * sin(time);
+    vec3 objectColor = vec3(.694, .612, .851); // some purple
+    vec3 lightPos = 30. * vec3(sin(time), 1., cos(time));
+    vec3 lightColor = vec3(.9); // white light
 
-    // Calculate a vector from the fragment location to the light source
-    to_light = vec3(0., 10., 0.) - v_Vertex;
-    to_light = normalize( to_light );
-
-    // The vertex's normal vector is being interpolated across the primitive
-    // which can make it un-normalized. So normalize the vertex's normal vector.
-    vertex_normal = normalize( v_Normal );
-
-    // Calculate the cosine of the angle between the vertex's normal vector
-    // and the vector going to the light.
-    float angle = dot(vertex_normal, to_light);
-    angle = clamp(angle, 0.0, 1.0);
-    vec3 diffuse = angle * lightColor;
     // ambient
-    vec3 ambient = vec3(0.9) * objectColor;
-
+    float ambientStrength = 0.25;
+    vec3 ambient = ambientStrength * lightColor;
+  	
+    // diffuse 
+    vec3 norm = normalize(v_Normal);
+    vec3 lightDir = normalize(lightPos - v_Vertex);
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = diff * lightColor;
+    
     // specular
-    vec3 to_camera = -1.0 * v_Vertex;
-    vec3 reflection = 2.0 * dot(vertex_normal,to_light) * vertex_normal - to_light;
-    float cos_angle = dot(reflection, to_camera);
-    cos_angle = clamp(cos_angle, 0.0, 1.0);
-    cos_angle = pow(cos_angle, 32.);
-    vec3 specular = cos_angle *  0.1 * lightColor; // white light
+    float specularStrength = 0.5;
+    vec3 viewDir = normalize(-1. * v_Vertex);
+    vec3 reflectDir = reflect(-lightDir, norm);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.);
+    vec3 specular = specularStrength * spec * lightColor;
+        
+    vec3 col = (ambient + diffuse + specular) * objectColor;
 
-    vec3 col = objectColor * ( diffuse + ambient + specular);
     fragColor = vec4(col,1.0);
 }
 `
