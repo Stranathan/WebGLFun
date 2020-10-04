@@ -26,20 +26,20 @@ var teapotHelloFS = `#version 300 es
 precision highp float;
 
 in vec3 v_Vertex;
-in vec4 v_Color;
+//in vec4 v_Color;
 in vec3 v_Normal;
 
 out vec4 fragColor;
 
 uniform float time;
 uniform vec2 resolution;
+uniform vec3 lightPos;
 
 void main()
 {
     //vec2 uv = 2. * ( gl_FragCoord.xy -.5 * resolution.xy ) / resolution.y;
     
     vec3 objectColor = vec3(.694, .612, .851); // some purple
-    vec3 lightPos = 30. * vec3(sin(time), 1., cos(time));
     vec3 lightColor = vec3(.9); // white light
 
     // ambient
