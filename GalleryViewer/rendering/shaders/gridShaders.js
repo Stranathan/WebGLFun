@@ -2,7 +2,9 @@ var gridVS = `#version 300 es
 
 precision highp float;
 
-in vec3 vertexPos;
+layout (location=0) in vec3 vertexPos;
+layout (location=1) in vec3 vertexTex;
+layout (location=2) in vec3 vertexNormal;
 
 uniform mat4 model;
 uniform mat4 view;

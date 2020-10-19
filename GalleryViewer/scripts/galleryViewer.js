@@ -27,15 +27,15 @@ function main()
     gl.canvas.width = width;
     gl.canvas.height = height;
 
+    // ------------------ Renderables Init ------------------
+    var renderables = []; // list of javascript objects with vao, program, triangle count;
+
     // ------------------ Camera/s Init------------------
     var camRadius = 20.;
     var maxCamRadius = 30;
     var camPos = vec4.fromValues(0, 0, -camRadius, 1.);
     var camUp = vec4.fromValues(0.0, 1.0, 0.0, 1.0); // really world up for gram-schmidt process
     var targetPos = vec3.fromValues(0.0, 0.0, 0.0);
-
-    // ------------------ Light/s Init------------------
-    var sceneLight = vec3.fromValues(0, 25, 0);
 
     // ------------------ MVP Init------------------
     var view = mat4.create();
@@ -58,17 +58,63 @@ function main()
     window.addEventListener('mouseup', function(event) { onMouseUp(event);});
     window.addEventListener('wheel', function(event) { onMouseWheel(event);});
 
+    // ------------------ Light/s Init------------------
+    var sceneLight = vec4.fromValues(12., 12., 0., 1.);
+
+    // ------------------ Light VP ------------------
+    var lightView = mat4.create();
+    mat4.lookAt(lightView, [sceneLight[0], sceneLight[1], sceneLight[2]], targetPos, [camUp[0], camUp[1], camUp[2]]);
+    var lightProjection = mat4.create();
+    mat4.ortho(lightProjection, -10, 10, -10, 10, 1, 50)
+    var lightVP = mat4.create();
+    mat4.multiply(lightVP, lightProjection, lightView);
+
+    // ------------------ Hardcoding Attribs and accounting for potential JS weirdness ------------------
+    var positionLayoutLocation = Math.floor(0);
+    var texLayoutLocation = Math.floor(1);
+    var normalLayoutLocation = Math.floor(2);
+    
+    // ------------------ Light and Shadow Map FBO & Tex Init ------------------
+    const depthTexture = gl.createTexture();
+    const depthTextureSize = 1024;
+    gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+    gl.texImage2D(
+        gl.TEXTURE_2D,      // target
+        0,                  // mip level
+        gl.DEPTH_COMPONENT32F, // internal format
+        depthTextureSize,   // width
+        depthTextureSize,   // height
+        0,                  // border
+        gl.DEPTH_COMPONENT, // format
+        gl.FLOAT,           // type
+        null);              // data
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_BORDER);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_BORDER);
+     
+    const depthFramebuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, depthFramebuffer);
+    gl.framebufferTexture2D(
+        gl.FRAMEBUFFER,       // target
+        gl.DEPTH_ATTACHMENT,  // attachment point
+        gl.TEXTURE_2D,        // texture target
+        depthTexture,         // texture
+        0);                   // mip level
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+
     // ------------------ Initialize Shader Programs ------------------
-    //         ------------------ Floor Quad  ------------------
-    var renderables = []; // list of javascript objects with vao, program, triangle count;
+    // ------------------ Depth Map Shader
+    var depthShaderProgram = createProgramFromSources(gl, depthMapVS, depthMapFS);
+    var depthShaderModelUniformLocation = gl.getUniformLocation(depthShaderProgram, "model");
+    var depthShaderLightViewProjectionUniformLocation = gl.getUniformLocation(depthShaderProgram, "lightVP");
 
-    // -------- Base Shader
+    // ------------------ Base Shader
     var baseShaderProgram = createProgramFromSources(gl, baseVS, baseFS);
-    // ---- Attribs
-    var baseShaderPositionAttributeLocation = gl.getAttribLocation(baseShaderProgram, "vertexPos");
-    var baseShaderNormalAttributeLocation = gl.getAttribLocation(baseShaderProgram, "vertexNormal");
 
-    // ---- Uniforms
+    // ------------------ Uniforms
     var baseShaderResolutionUniformLocation = gl.getUniformLocation(baseShaderProgram, "resolution");
     var baseShaderTimeUniformLocation = gl.getUniformLocation(baseShaderProgram, "time");
     var baseShaderModelUniformLocation = gl.getUniformLocation(baseShaderProgram, "model");
@@ -90,11 +136,11 @@ function main()
     var normalize = false; 
     var stride = 6 * 4; // 0 = move forward size * sizeof(type) each iteration to get the next position
     var offset = 0;
-    gl.vertexAttribPointer(baseShaderPositionAttributeLocation, size, type, normalize, stride, offset);
-    gl.enableVertexAttribArray(baseShaderPositionAttributeLocation);
+    gl.vertexAttribPointer(positionLayoutLocation, size, type, normalize, stride, offset);
+    gl.enableVertexAttribArray(positionLayoutLocation);
     offset = 3 * 4;
-    gl.vertexAttribPointer(baseShaderNormalAttributeLocation, 3, gl.FLOAT, false, stride, offset);
-    gl.enableVertexAttribArray(baseShaderNormalAttributeLocation);
+    gl.vertexAttribPointer(normalLayoutLocation, 3, gl.FLOAT, false, stride, offset);
+    gl.enableVertexAttribArray(normalLayoutLocation);
     
     // Grid floor model transform
     let model = mat4.create();
@@ -123,7 +169,7 @@ function main()
     // -------- Grid Shader
     var gridShaderProgram = createProgramFromSources(gl, gridVS, gridFS);
     // -------- Attribs
-    var gridShaderPositionAttributeLocation = gl.getAttribLocation(gridShaderProgram, "vertexPos");
+    //var gridShaderPositionAttributeLocation = gl.getAttribLocation(gridShaderProgram, "vertexPos");
     // -------- Uniforms
     var gridShaderResolutionUniformLocation = gl.getUniformLocation(gridShaderProgram, "resolution");
     var gridShaderTimeUniformLocation = gl.getUniformLocation(gridShaderProgram, "time");
@@ -142,8 +188,8 @@ function main()
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(gridVerts), gl.STATIC_DRAW);
     stride = 0;
     offset = 0;
-    gl.vertexAttribPointer(gridShaderPositionAttributeLocation, size, type, normalize, stride, offset);
-    gl.enableVertexAttribArray(gridShaderPositionAttributeLocation);
+    gl.vertexAttribPointer(positionLayoutLocation, size, type, normalize, stride, offset);
+    gl.enableVertexAttribArray(positionLayoutLocation);
     
     model = mat4.create();
     mat4.translate(model, model, [0, floorY + 0.1, 0.]);
@@ -181,9 +227,6 @@ function main()
 
     function renderLoop(timeStamp)
     {
-        resize(gl.canvas);
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
         // time update
         deltaTime = (timeStamp - oldTimeStamp) / 1000; // in seconds
         oldTimeStamp = timeStamp;
@@ -212,20 +255,16 @@ function main()
             //console.log("Mesh Loaded in " + seconds + ", good to send to GPU");
             teaPotMeshCount += 1;
 
-            var teaPotShaderProgram = createProgramFromSources(gl, teapotHelloVS, teapotHelloFS);
-            // ---- Attribs
-            var teaPotShaderPositionAttributeLocation = gl.getAttribLocation(teaPotShaderProgram, "vertexPos");
-            var teaPotShaderTexAttributeLocation = gl.getAttribLocation(teaPotShaderProgram, "vertexTex");
-            var teaPotShaderNormalAttributeLocation = gl.getAttribLocation(teaPotShaderProgram, "vertexNormal");
+            var teaPotShaderProgram = createProgramFromSources(gl, teapotVS, teapotFS);
+            
             // ---- Uniforms
             var teaPotShaderResolutionUniformLocation = gl.getUniformLocation(teaPotShaderProgram, "resolution");
             var teaPotShaderTimeUniformLocation = gl.getUniformLocation(teaPotShaderProgram, "time");
             var teaPotShaderModelUniformLocation = gl.getUniformLocation(teaPotShaderProgram, "model");
             var teaPotShaderViewUniformLocation = gl.getUniformLocation(teaPotShaderProgram, "view");
             var teaPotShaderProjectionUniformLocation = gl.getUniformLocation(teaPotShaderProgram, "projection");
-
-            var teaPotLightUniformLocation = gl.getUniformLocation(baseShaderProgram, "lightPos");
-
+            var teaPotShaderLightUniformLocation = gl.getUniformLocation(teaPotShaderProgram, "lightPos");
+            var teaPotShaderLightVPUniformLocation = gl.getUniformLocation(teaPotShaderProgram, "lightVP");
 
             // make a shader program and a vao for the loaded mesh
             var teapotVAO = gl.createVertexArray();
@@ -236,14 +275,14 @@ function main()
 
             let theStride = 9 * 4 // 9 floats at 4 bytes per float
             let theOffset = 0;
-            gl.vertexAttribPointer(teaPotShaderPositionAttributeLocation, 3, gl.FLOAT, false, theStride, theOffset);
-            gl.enableVertexAttribArray(teaPotShaderPositionAttributeLocation);
+            gl.vertexAttribPointer(positionLayoutLocation, 3, gl.FLOAT, false, theStride, theOffset);
+            gl.enableVertexAttribArray(positionLayoutLocation);
             theOffset = 3 * 4; 
-            gl.vertexAttribPointer(teaPotShaderTexAttributeLocation, 3, gl.FLOAT, false, theStride, theOffset);
-            gl.enableVertexAttribArray(teaPotShaderTexAttributeLocation);
+            gl.vertexAttribPointer(texLayoutLocation, 3, gl.FLOAT, false, theStride, theOffset);
+            gl.enableVertexAttribArray(texLayoutLocation);
             theOffset = 6 * 4;
-            gl.vertexAttribPointer(teaPotShaderNormalAttributeLocation, 3, gl.FLOAT, false, theStride, theOffset);
-            gl.enableVertexAttribArray(teaPotShaderNormalAttributeLocation);
+            gl.vertexAttribPointer(normalLayoutLocation, 3, gl.FLOAT, false, theStride, theOffset);
+            gl.enableVertexAttribArray(normalLayoutLocation);
 
             let model = mat4.create();
             mat4.scale(model, model, [0.5, 0.5, 0.5]);
@@ -260,7 +299,8 @@ function main()
                  program: teaPotShaderProgram,
                  uniformLocations: {resolution: teaPotShaderResolutionUniformLocation,
                                     time: teaPotShaderTimeUniformLocation,
-                                    light: teaPotLightUniformLocation,
+                                    light: teaPotShaderLightUniformLocation,
+                                    lightVP: teaPotShaderLightVPUniformLocation,
                                     model: teaPotShaderModelUniformLocation,
                                     view: teaPotShaderViewUniformLocation,
                                     projection: teaPotShaderProjectionUniformLocation
@@ -268,16 +308,37 @@ function main()
                 });
         }
 
-        // render stuff
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         if(renderables.length != 0)
         {
+            // ------------------ Depth Map Pass ------------------
+            gl.cullFace(gl.FRONT);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.viewport(0, 0, depthTextureSize, depthTextureSize);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, depthFramebuffer);
+            gl.useProgram(depthShaderProgram);
+
+            for(let i = 0; i < renderables.length; i++)
+            {
+                gl.bindVertexArray(renderables[i].vao);
+                gl.uniformMatrix4fv(depthShaderModelUniformLocation, false, renderables[i].transform);
+                gl.uniformMatrix4fv(depthShaderLightViewProjectionUniformLocation, false, lightVP);
+                gl.drawArrays(renderables[i].primitiveType, 0, renderables[i].arrayedTriCount);
+            }
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+            // ------------------ Viewing Pass ------------------
+            gl.cullFace(gl.BACK);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            resize(gl.canvas);
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+            gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+
             for(let i = 0; i < renderables.length; i++)
             {
                 // bind vao
                 gl.bindVertexArray(renderables[i].vao);
                 gl.useProgram(renderables[i].program);
-
+                
                 // pass uniforms
                 for( let uniform in renderables[i].uniformLocations)
                 {
@@ -291,6 +352,9 @@ function main()
                             break;
                         case "light":
                             gl.uniform3f(renderables[i].uniformLocations[uniform], sceneLight[0], sceneLight[1], sceneLight[2]);
+                            break;
+                        case "lightVP":
+                            gl.uniformMatrix4fv(renderables[i].uniformLocations[uniform], false, lightVP);
                             break;
                         case "model":
                             gl.uniformMatrix4fv(renderables[i].uniformLocations[uniform], false, renderables[i].transform);

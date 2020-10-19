@@ -2,8 +2,9 @@ var baseVS = `#version 300 es
 
 precision highp float;
 
-in vec3 vertexPos;
-in vec3 vertexNormal;
+layout (location=0) in vec3 vertexPos;
+layout (location=1) in vec3 vertexTex;
+layout (location=2) in vec3 vertexNormal;
 
 out vec3 v_Normal;
 out vec3 v_Vertex;
