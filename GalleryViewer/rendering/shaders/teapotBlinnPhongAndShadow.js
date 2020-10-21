@@ -60,7 +60,14 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 lightDir, vec3 normal)
     float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
     
+    // learnopengl
     float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    
+    // opengl-tutorial.org
+    // float scalarProduct = dot(normal, lightDir);
+    // float cosTheta = clamp(scalarProduct, 0., 1.);
+    // float bias = 0.005*tan(acos(cosTheta)); //  is dot( n,l ), clamped between 0 and 1
+    // bias = clamp(bias, 0., 0.005);
 
     //float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
     float shadow = 0.0;
@@ -72,7 +79,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 lightDir, vec3 normal)
         {
             float yy = float(y);
             float pcfDepth = texture(shadowMap, projCoords.xy + (vec2(xx, yy) * texelSize)).r; 
-            shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;        
+            shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;   
         }    
     }
     shadow /= 9.0;

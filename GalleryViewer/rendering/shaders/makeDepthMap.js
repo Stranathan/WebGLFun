@@ -19,8 +19,12 @@ var depthMapFS = `#version 300 es
 
 precision highp float;
 
+#define BIAS (0.01)
+
 void main()
 {
     gl_FragDepth = gl_FragCoord.z;
+    // gl_FragDepth = gl_FragCoord.z;
+    // gl_FragDepth += gl_FrontFacing ? BIAS : 0.0;
 }
 `

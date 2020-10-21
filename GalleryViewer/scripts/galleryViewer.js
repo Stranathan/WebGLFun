@@ -27,23 +27,35 @@ function main()
     gl.canvas.width = width;
     gl.canvas.height = height;
 
+    var SHADOW_MAP_DEBUG_STATE = true;
+    
     // ------------------ Renderables Init ------------------
     var renderables = []; // list of javascript objects with vao, program, triangle count;
+    var lhsRenderables = [];
 
     // ------------------ Camera/s Init------------------
     var camRadius = 20.;
-    var maxCamRadius = 30;
-    var camPos = vec4.fromValues(0, 0, -camRadius, 1.);
+    var maxCamRadius = 40;
+    var camPos = vec4.fromValues(8., 8., -8., 1.);
     var camUp = vec4.fromValues(0.0, 1.0, 0.0, 1.0); // really world up for gram-schmidt process
     var targetPos = vec3.fromValues(0.0, 0.0, 0.0);
 
+    // ------------------ Starting Scales of Teapot and Plane base ------------------
+    let baseScale = [10, 10, 10];
+    let teapotScale = [0.5, 0.5, 0.5];
+
     // ------------------ MVP Init------------------
+    
     var view = mat4.create();
     mat4.lookAt(view, [camPos[0], camPos[1], camPos[2]], targetPos, [camUp[0], camUp[1], camUp[2]]);
     var projection = mat4.create();
     let fieldOfVision = 0.5 * Math.PI / 2.;
     let aspectRatio = gl.canvas.width / gl.canvas.height;
-    mat4.perspective(projection, fieldOfVision, aspectRatio, 1, 50);
+    if(SHADOW_MAP_DEBUG_STATE == true)
+    {
+        aspectRatio = 0.5 * gl.canvas.width / gl.canvas.height;
+    }
+    mat4.perspective(projection, fieldOfVision, aspectRatio, 1, 100);
 
     // ------------------ Mouse Picking Stuff ------------------
     var rayCastSwitch = false;
@@ -59,13 +71,14 @@ function main()
     window.addEventListener('wheel', function(event) { onMouseWheel(event);});
 
     // ------------------ Light/s Init------------------
-    var sceneLight = vec4.fromValues(12., 12., 0., 1.);
-
+    var lightPos = vec4.fromValues(8., 8., -8., 1.);
+    var lightUp = vec4.fromValues(0., 1., 0., 1.);
+    
     // ------------------ Light VP ------------------
     var lightView = mat4.create();
-    mat4.lookAt(lightView, [sceneLight[0], sceneLight[1], sceneLight[2]], targetPos, [camUp[0], camUp[1], camUp[2]]);
+    mat4.lookAt(lightView, [lightPos[0], lightPos[1], lightPos[2]], targetPos, [lightUp[0], lightUp[1], lightUp[0]]);
     var lightProjection = mat4.create();
-    mat4.ortho(lightProjection, -10, 10, -10, 10, 1, 50)
+    mat4.ortho(lightProjection, -10, 10, -10, 10, 1, 25);
     var lightVP = mat4.create();
     mat4.multiply(lightVP, lightProjection, lightView);
 
@@ -106,10 +119,18 @@ function main()
     gl.bindTexture(gl.TEXTURE_2D, null);
 
     // ------------------ Initialize Shader Programs ------------------
+    
     // ------------------ Depth Map Shader
     var depthShaderProgram = createProgramFromSources(gl, depthMapVS, depthMapFS);
     var depthShaderModelUniformLocation = gl.getUniformLocation(depthShaderProgram, "model");
     var depthShaderLightViewProjectionUniformLocation = gl.getUniformLocation(depthShaderProgram, "lightVP");
+
+    // ------------------ Debug Depth Map Shader
+    if(SHADOW_MAP_DEBUG_STATE)
+    {
+        var shadowMapDebugShaderProgram = createProgramFromSources(gl, depthMapVisualizationVS, depthMapVisualizationFS);
+        var shadowMapDebugShaderResolutionUniformLocation = gl.getUniformLocation(shadowMapDebugShaderProgram, "resolution");
+    }
 
     // ------------------ Base Shader
     var baseShaderProgram = createProgramFromSources(gl, baseVS, baseFS);
@@ -120,11 +141,35 @@ function main()
     var baseShaderModelUniformLocation = gl.getUniformLocation(baseShaderProgram, "model");
     var baseShaderViewUniformLocation = gl.getUniformLocation(baseShaderProgram, "view");
     var baseShaderProjectionUniformLocation = gl.getUniformLocation(baseShaderProgram, "projection");
-
     var baseShaderLightUniformLocation = gl.getUniformLocation(baseShaderProgram, "lightPos");
+    var baseShaderLightVPUniformLocation = gl.getUniformLocation(baseShaderProgram, "lightVP");
 
     // ------------------ Initialize VAOs ------------------
-    // -------- Base Quad
+
+    // ------------------ Debug Splitscreeen Depth Map VAO ------------------
+
+    var shadowMapDebugVAO = gl.createVertexArray();
+    var shadowMapDebugVBO = gl.createBuffer();
+
+    gl.bindVertexArray(shadowMapDebugVAO);
+    gl.bindBuffer(gl.ARRAY_BUFFER, shadowMapDebugVBO);
+
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(quadPositions), gl.STATIC_DRAW);
+
+    gl.vertexAttribPointer(positionLayoutLocation, 3, gl.FLOAT, false, (6 * 4), 0);
+    gl.enableVertexAttribArray(positionLayoutLocation);
+
+    gl.vertexAttribPointer(normalLayoutLocation, 3, gl.FLOAT, false, (6 * 4), (3 * 4));
+    gl.enableVertexAttribArray(normalLayoutLocation);
+    
+    lhsRenderables.push({vao: shadowMapDebugVAO,
+                            primitiveType: gl.TRIANGLES,
+                            arrayedTriCount: Math.round(quadPositions.length / 6),
+                            program: shadowMapDebugShaderProgram,
+                            uniformLocations: {resolution: shadowMapDebugShaderResolutionUniformLocation}
+                        });
+
+    // ------------------ Plane Base Quad VAO ------------------
     var quadVAO = gl.createVertexArray();
     var quadVBO = gl.createBuffer();
     gl.bindVertexArray(quadVAO);
@@ -144,9 +189,9 @@ function main()
     
     // Grid floor model transform
     let model = mat4.create();
-    let floorY = -2.5;
+    let floorY = -1;
     mat4.translate(model, model, [0, floorY, 0.]);
-    mat4.scale(model, model, [10, 10, 10]);
+    mat4.scale(model, model, baseScale);
     mat4.rotateX(model, model, Math.PI / 2);
 
     renderables.push(
@@ -158,26 +203,25 @@ function main()
          uniformLocations: {resolution: baseShaderResolutionUniformLocation,
                             time: baseShaderTimeUniformLocation,
                             light: baseShaderLightUniformLocation,
+                            lightVP: baseShaderLightVPUniformLocation,
                             model: baseShaderModelUniformLocation,
                             view: baseShaderViewUniformLocation,
-                            projection: baseShaderProjectionUniformLocation}
+                            projection: baseShaderProjectionUniformLocation
+                           }
         });
     
-    // ------------------ Grid Overlay  ------------------
-    // Could do it with barycentric coordinate in frag shader, but won't be quad grid lines
+    // ------------------ Make Grid Overlay  ------------------
 
-    // -------- Grid Shader
+    // ------------------ Grid Shader
     var gridShaderProgram = createProgramFromSources(gl, gridVS, gridFS);
-    // -------- Attribs
-    //var gridShaderPositionAttributeLocation = gl.getAttribLocation(gridShaderProgram, "vertexPos");
-    // -------- Uniforms
+    // ------------------ Uniforms
     var gridShaderResolutionUniformLocation = gl.getUniformLocation(gridShaderProgram, "resolution");
     var gridShaderTimeUniformLocation = gl.getUniformLocation(gridShaderProgram, "time");
     var gridShaderModelUniformLocation = gl.getUniformLocation(gridShaderProgram, "model");
     var gridShaderViewUniformLocation = gl.getUniformLocation(gridShaderProgram, "view");
     var gridShaderProjectionUniformLocation = gl.getUniformLocation(gridShaderProgram, "projection");
 
-    // -------- Grid Quad
+    // ------------------ Grid Quad
     var gridVAO = gl.createVertexArray();
     var gridVBO = gl.createBuffer();
     gl.bindVertexArray(gridVAO);
@@ -193,7 +237,7 @@ function main()
     
     model = mat4.create();
     mat4.translate(model, model, [0, floorY + 0.1, 0.]);
-    mat4.scale(model, model, [10, 10, 10]);
+    mat4.scale(model, model, baseScale);
     mat4.rotateX(model, model, Math.PI / 2);
     // note: arrayedTriCount is really arrayed line segment count for this renderable
     renderables.push(
@@ -209,7 +253,7 @@ function main()
                             projection: gridShaderProjectionUniformLocation}
         });
 
-    // ------------------ Initialize gl settings ------------------
+    // ------------------ Initialize Global GL State ------------------
     gl.enable(gl.DEPTH_TEST);
     gl.clearColor(0, 0, 0, 0);
     
@@ -243,10 +287,9 @@ function main()
             vec4.transformMat4(camPos, camPos, rotMat);
         }
 
-        view = mat4.create();
         mat4.lookAt(view, [camPos[0], camPos[1], camPos[2]], targetPos, [camUp[0], camUp[1], camUp[2]]);
         projection = mat4.create();
-        aspectRatio = gl.canvas.width / gl.canvas.height; // this needn't be done every update, only when resolution is changed
+        //aspectRatio = gl.canvas.width / gl.canvas.height; // this needn't be done every update, only when resolution is changed
         mat4.perspective(projection, fieldOfVision, aspectRatio, 1, 50);
 
         // check to see if the mesh has loaded and load teapot mesh
@@ -285,8 +328,8 @@ function main()
             gl.enableVertexAttribArray(normalLayoutLocation);
 
             let model = mat4.create();
-            mat4.scale(model, model, [0.5, 0.5, 0.5]);
-            mat4.translate(model, model, [0, -4., 0.]);
+            mat4.scale(model, model, teapotScale);
+            mat4.translate(model, model, [0., 0., 0.]);
             mat4.rotateX(model, model, -Math.PI / 2);
 
             // Note: arrayedTriCount is the the number of triangles to be rendered, so since there is 9 floats in stride,
@@ -307,16 +350,15 @@ function main()
                                    },
                 });
         }
-
+        
         if(renderables.length != 0)
         {
             // ------------------ Depth Map Pass ------------------
-            gl.cullFace(gl.FRONT);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.viewport(0, 0, depthTextureSize, depthTextureSize);
             gl.bindFramebuffer(gl.FRAMEBUFFER, depthFramebuffer);
             gl.useProgram(depthShaderProgram);
-
+            
             for(let i = 0; i < renderables.length; i++)
             {
                 gl.bindVertexArray(renderables[i].vao);
@@ -327,12 +369,27 @@ function main()
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
             // ------------------ Viewing Pass ------------------
-            gl.cullFace(gl.BACK);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             resize(gl.canvas);
-            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
             gl.bindTexture(gl.TEXTURE_2D, depthTexture);
 
+            if(SHADOW_MAP_DEBUG_STATE)
+            {
+                let leftWidth = gl.canvas.width / 2.;
+                gl.viewport(0, 0, leftWidth, height);
+                gl.bindVertexArray(shadowMapDebugVAO);
+                gl.useProgram(shadowMapDebugShaderProgram);
+                gl.uniform2f(lhsRenderables[0].uniformLocations["resolution"], leftWidth, gl.canvas.height);
+                gl.drawArrays(lhsRenderables[0].primitiveType, 0, lhsRenderables[0].arrayedTriCount);
+                // draw on the right with perspective camera
+                let rightWidth = gl.canvas.width - leftWidth;
+                gl.viewport(leftWidth, 0, rightWidth, gl.canvas.height);
+            }
+            else
+            {
+                gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+            }
+            
             for(let i = 0; i < renderables.length; i++)
             {
                 // bind vao
@@ -351,7 +408,7 @@ function main()
                             gl.uniform2f(renderables[i].uniformLocations[uniform], gl.canvas.width, gl.canvas.height);
                             break;
                         case "light":
-                            gl.uniform3f(renderables[i].uniformLocations[uniform], sceneLight[0], sceneLight[1], sceneLight[2]);
+                            gl.uniform3f(renderables[i].uniformLocations[uniform], lightPos[0], lightPos[1], lightPos[2]);
                             break;
                         case "lightVP":
                             gl.uniformMatrix4fv(renderables[i].uniformLocations[uniform], false, lightVP);
@@ -426,7 +483,6 @@ function main()
             let tmp = vec4.create();
             vec4.transformMat4(tmp, ray_eye, inverseViewMatrix);
             let rayDirWorld = vec3.fromValues(tmp[0], tmp[1], tmp[2]);
-            //rayDirWorld = vec3.normalize(rayDirWorld, rayDirWorld);
 
             let angle = vec3.angle(clickRayDirWorld, rayDirWorld);
 
@@ -437,10 +493,7 @@ function main()
 
             vec3.cross(mouseMoveRotionAxis, clickRayDirWorld, rayDirWorld);
 
-            // checking by hand to prevent lookAt method from failing
-            
             let rotMat = mat4.create();
-
             mat4.rotate(rotMat, rotMat, angle, mouseMoveRotionAxis);
             vec4.transformMat4(camUp, camUp, rotMat);
             vec4.transformMat4(camPos, camPos, rotMat);
