@@ -27,7 +27,7 @@ function main()
     gl.canvas.width = width;
     gl.canvas.height = height;
 
-    var SHADOW_MAP_DEBUG_STATE = true;
+    var SHADOW_MAP_DEBUG_STATE = false;
     
     // ------------------ Renderables Init ------------------
     var renderables = []; // list of javascript objects with vao, program, triangle count;
@@ -36,7 +36,7 @@ function main()
     // ------------------ Camera/s Init------------------
     var camRadius = 20.;
     var maxCamRadius = 40;
-    var camPos = vec4.fromValues(8., 8., -8., 1.);
+    var camPos = vec4.fromValues(8., 15., -15., 1.);
     var camUp = vec4.fromValues(0.0, 1.0, 0.0, 1.0); // really world up for gram-schmidt process
     var targetPos = vec3.fromValues(0.0, 0.0, 0.0);
 
@@ -58,7 +58,14 @@ function main()
     mat4.perspective(projection, fieldOfVision, aspectRatio, 1, 100);
 
     // ------------------ Mouse Picking Stuff ------------------
-    var rayCastSwitch = false;
+    var firstMouseBtnRayCastSwitch = false;
+    var secondMouseBtnRayCastSwitch = false;
+
+    var setPanningDirectionSwitch = false;
+    var cu = vec3.create();
+    var cf = vec3.create();
+    var cr = vec3.create();
+
     var clickRayDirWorld = null;
     var mouseMoveRotionAxis = vec3.create();
     var omega = 0;
@@ -71,14 +78,14 @@ function main()
     window.addEventListener('wheel', function(event) { onMouseWheel(event);});
 
     // ------------------ Light/s Init------------------
-    var lightPos = vec4.fromValues(8., 8., -8., 1.);
+    var lightPos = vec4.fromValues(5., 15., +10., 1.);
     var lightUp = vec4.fromValues(0., 1., 0., 1.);
     
     // ------------------ Light VP ------------------
     var lightView = mat4.create();
     mat4.lookAt(lightView, [lightPos[0], lightPos[1], lightPos[2]], targetPos, [lightUp[0], lightUp[1], lightUp[0]]);
     var lightProjection = mat4.create();
-    mat4.ortho(lightProjection, -10, 10, -10, 10, 1, 25);
+    mat4.ortho(lightProjection, -10, 10, -10, 10, 1, 40);
     var lightVP = mat4.create();
     mat4.multiply(lightVP, lightProjection, lightView);
 
@@ -162,7 +169,8 @@ function main()
     gl.vertexAttribPointer(normalLayoutLocation, 3, gl.FLOAT, false, (6 * 4), (3 * 4));
     gl.enableVertexAttribArray(normalLayoutLocation);
     
-    lhsRenderables.push({vao: shadowMapDebugVAO,
+    lhsRenderables.push({   tag: "shadowMapDebugQuad",
+                            vao: shadowMapDebugVAO,
                             primitiveType: gl.TRIANGLES,
                             arrayedTriCount: Math.round(quadPositions.length / 6),
                             program: shadowMapDebugShaderProgram,
@@ -195,7 +203,8 @@ function main()
     mat4.rotateX(model, model, Math.PI / 2);
 
     renderables.push(
-        {transform: model,
+        {tag: "baseQuad",
+         transform: model,
          vao: quadVAO,
          primitiveType: gl.TRIANGLES,
          arrayedTriCount: Math.round(quadPositions.length / 6),
@@ -227,7 +236,11 @@ function main()
     gl.bindVertexArray(gridVAO);
     gl.bindBuffer(gl.ARRAY_BUFFER, gridVBO);
     // use helper function to make the vertex data for the grid lines
-    let gridSize = 12;
+
+    // x values on unit quad vary normally from -1 to 1, so scaling by 10
+    // will take them to -10 to 10, our grid lines however are an even division of whatever is available
+    // so if we want them to represent units of one, then it must be 2 * 10
+    let gridSize = 2. * baseScale[0];
     makeUnitGrid(gridSize); // this can be changed to not take in min/max args since it's always unit quad
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(gridVerts), gl.STATIC_DRAW);
     stride = 0;
@@ -241,7 +254,8 @@ function main()
     mat4.rotateX(model, model, Math.PI / 2);
     // note: arrayedTriCount is really arrayed line segment count for this renderable
     renderables.push(
-        {transform: model,
+        {tag: "gridOverlay",
+         transform: model,
          vao: gridVAO,
          primitiveType: gl.LINES,
          arrayedTriCount: 4 * (gridSize + 1) * gridSize,
@@ -335,7 +349,8 @@ function main()
             // Note: arrayedTriCount is the the number of triangles to be rendered, so since there is 9 floats in stride,
             // it must be the size of the interleaved array / 9
             renderables.push(
-                {transform: model,
+                {tag: "teapot",
+                 transform: model,
                  vao: teapotVAO,
                  primitiveType: gl.TRIANGLES,
                  arrayedTriCount: Math.round(meshVertData.length / 9),
@@ -396,6 +411,12 @@ function main()
                 gl.bindVertexArray(renderables[i].vao);
                 gl.useProgram(renderables[i].program);
                 
+                if(renderables[i].uniformLocations[0]== "teapot")
+                {
+                    let aRotMat4 = mat4.create();
+                    mat4.rotateY(aRotMat4, aRotMat4, 0.2 * seconds);
+                    renderables[i].transform *= aRotMat4;
+                }
                 // pass uniforms
                 for( let uniform in renderables[i].uniformLocations)
                 {
@@ -455,12 +476,22 @@ function main()
         let tmp = vec4.create();
         vec4.transformMat4(tmp, ray_eye, inverseViewMatrix);
         clickRayDirWorld = vec3.fromValues(tmp[0], tmp[1], tmp[2]);
-        //clickRayDirWorld = vec3.normalize(clickRayDirWorld, clickRayDirWorld);  
-        rayCastSwitch = true;
+
+        if(event.which == 1)
+        {
+            console.log("first mouse btn pressed");
+            firstMouseBtnRayCastSwitch = true;
+        }
+        else if (event.which == 2) 
+        {
+            setPanningDirectionSwitch = true;
+            secondMouseBtnRayCastSwitch = true;
+            //console.log("right mouse btn pressed");
+        }
     }
     function onMouseMove(event)
     {
-        if(rayCastSwitch == true)
+        if(firstMouseBtnRayCastSwitch)
         {
             let mousePosX = event.offsetX;
             mousePosX = (2. * mousePosX / gl.canvas.width - 1.);
@@ -504,44 +535,105 @@ function main()
             // move to this vector so the next mouse move calculation is possible
             clickRayDirWorld = rayDirWorld;
         }
+        else if(secondMouseBtnRayCastSwitch)
+        {
+            let mousePosX = event.offsetX;
+            mousePosX = (2. * mousePosX / gl.canvas.width - 1.);
+            let mousePosY = event.offsetY;
+            mousePosY = -1 * (2. * mousePosY / gl.canvas.height - 1.);
+
+            // #---------- RAY CASTING -------------#
+            // RAY IN NDC SPACE
+            let ray_clip = vec4.fromValues(mousePosX, mousePosY, -1.0, 1.0);
+            let inverseProjectionMatrix = mat4.create();
+            mat4.invert(inverseProjectionMatrix, projection);
+
+            vec4.transformMat4(ray_clip, ray_clip, inverseProjectionMatrix);
+            // we only needed to un-project the x,y part,
+            // so let's manually set the z, w part to mean "forwards, and not a point
+            let ray_eye = vec4.fromValues(ray_clip[0], ray_clip[1], -1.0, 0.0);
+
+            let inverseViewMatrix = mat4.create();
+            mat4.invert(inverseViewMatrix, view);
+            let tmp = vec4.create();
+            vec4.transformMat4(tmp, ray_eye, inverseViewMatrix);
+            let rayDirWorld = vec3.fromValues(tmp[0], tmp[1], tmp[2]);
+
+            if(setPanningDirectionSwitch)
+            {
+                vec3.normalize(cu, [camUp[0], camUp[1], camUp[2]]);
+                console.log("the up is: " + vec3.str(cu));
+                vec3.subtract(cf, targetPos, [camPos[0], camPos[1], camPos[2]]);
+                vec3.normalize(cf, cf);
+                console.log("the forward is: " + vec3.str(cf));
+                vec3.cross(cr, cf, cu);
+                console.log("the right is: " + vec3.str(cr));
+                setPanningDirectionSwitch = false;
+            }
+
+            let interopolatingVal = camRadius/maxCamRadius;
+            let panFactor = 10.;
+            //panFactor = (1 - interopolatingVal)*(panFactor/4) + interopolatingVal * (panFactor/2);
+
+            let relativeDiff = vec3.create();
+            vec3.subtract(relativeDiff, clickRayDirWorld, rayDirWorld);
+            let projectionOntoRightLen = vec3.dot(relativeDiff, cr) * panFactor;
+            let projectionOntoUpLen = vec3.dot(relativeDiff, cu) * panFactor;
+
+            let theVector = vec3.create();
+            vec3.add(theVector,
+                     vec3.fromValues(projectionOntoRightLen * cr[0], projectionOntoRightLen * cr[1], projectionOntoRightLen *cr[2]),
+                     vec3.fromValues(projectionOntoUpLen * cu[0], projectionOntoUpLen * cu[1], projectionOntoUpLen * cu[2])
+                    )
+            vec3.add(targetPos, targetPos, theVector);
+            vec4.add(camPos, camPos, [theVector[0], theVector[1], theVector[2], 0.]);
+            clickRayDirWorld = rayDirWorld;
+        }
     }
     function onMouseUp(event)
     {
-        if(rayCastSwitch == true)
+        if(firstMouseBtnRayCastSwitch == true)
         {
             spinDecayTimer = 0;
-            rayCastSwitch = false;
+            firstMouseBtnRayCastSwitch = false;
+        }
+        if(secondMouseBtnRayCastSwitch == true)
+        {
+            secondMouseBtnRayCastSwitch = false;
         }
     }
     function onMouseWheel(event)
     {
-        if(camRadius < maxCamRadius && camRadius > 0)
+        if(!secondMouseBtnRayCastSwitch)
         {
-            let relativePos = vec3.create();
-            vec3.subtract(relativePos, targetPos, vec3.fromValues(camPos[0], camPos[1], camPos[2]));
-            camRadius = vec3.length(relativePos);
+            if(camRadius < maxCamRadius && camRadius > 0)
+            {
+                let relativePos = vec3.create();
+                vec3.subtract(relativePos, targetPos, vec3.fromValues(camPos[0], camPos[1], camPos[2]));
+                camRadius = vec3.length(relativePos);
 
-            // scroll forward is negtive, scroll back is positive
-            // probably do a coroutine here eventually to make it smooth
-            
-            vec3.normalize(relativePos, relativePos);
-            let stepSize = -event.deltaY * 0.2;
-            vec3.multiply(relativePos, relativePos, vec3.fromValues(stepSize, stepSize, stepSize));
-            vec4.add(camPos, camPos, vec4.fromValues(relativePos[0], relativePos[1], relativePos[2], 0.));
-        }
-        else if(camRadius >= maxCamRadius && event.deltaY < 0)
-        {
-            let relativePos = vec3.create();
-            vec3.subtract(relativePos, targetPos, vec3.fromValues(camPos[0], camPos[1], camPos[2]));
-            camRadius = vec3.length(relativePos);
+                // scroll forward is negtive, scroll back is positive
+                // probably do a coroutine here eventually to make it smooth
+                
+                vec3.normalize(relativePos, relativePos);
+                let stepSize = -event.deltaY * 0.2;
+                vec3.multiply(relativePos, relativePos, vec3.fromValues(stepSize, stepSize, stepSize));
+                vec4.add(camPos, camPos, vec4.fromValues(relativePos[0], relativePos[1], relativePos[2], 0.));
+            }
+            else if(camRadius >= maxCamRadius && event.deltaY < 0)
+            {
+                let relativePos = vec3.create();
+                vec3.subtract(relativePos, targetPos, vec3.fromValues(camPos[0], camPos[1], camPos[2]));
+                camRadius = vec3.length(relativePos);
 
-            // scroll forward is negtive, scroll back is positive
-            // probably do a coroutine here eventually to make it smooth
-            
-            vec3.normalize(relativePos, relativePos);
-            let stepSize = -event.deltaY * 0.2;
-            vec3.multiply(relativePos, relativePos, vec3.fromValues(stepSize, stepSize, stepSize));
-            vec4.add(camPos, camPos, vec4.fromValues(relativePos[0], relativePos[1], relativePos[2], 0.));
+                // scroll forward is negtive, scroll back is positive
+                // probably do a coroutine here eventually to make it smooth
+                
+                vec3.normalize(relativePos, relativePos);
+                let stepSize = -event.deltaY * 0.2;
+                vec3.multiply(relativePos, relativePos, vec3.fromValues(stepSize, stepSize, stepSize));
+                vec4.add(camPos, camPos, vec4.fromValues(relativePos[0], relativePos[1], relativePos[2], 0.));
+            }
         }
     }
 }
