@@ -37,8 +37,6 @@ uniform vec3 lightPos;
 
 void main()
 {
-    //vec2 uv = 2. * ( gl_FragCoord.xy -.5 * resolution.xy ) / resolution.y;
-    
     vec3 objectColor = vec3(.694, .612, .851); // some purple
     vec3 lightColor = vec3(.9); // white light
 

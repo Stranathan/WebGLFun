@@ -150,6 +150,7 @@ function main()
     var baseShaderProjectionUniformLocation = gl.getUniformLocation(baseShaderProgram, "projection");
     var baseShaderLightUniformLocation = gl.getUniformLocation(baseShaderProgram, "lightPos");
     var baseShaderLightVPUniformLocation = gl.getUniformLocation(baseShaderProgram, "lightVP");
+    var baseShaderViewPosUniformLocation = gl.getUniformLocation(baseShaderProgram, "viewPos");
 
     // ------------------ Initialize VAOs ------------------
 
@@ -213,6 +214,7 @@ function main()
                             time: baseShaderTimeUniformLocation,
                             light: baseShaderLightUniformLocation,
                             lightVP: baseShaderLightVPUniformLocation,
+                            viewPos: baseShaderViewPosUniformLocation,
                             model: baseShaderModelUniformLocation,
                             view: baseShaderViewUniformLocation,
                             projection: baseShaderProjectionUniformLocation
@@ -269,6 +271,7 @@ function main()
 
     // ------------------ Initialize Global GL State ------------------
     gl.enable(gl.DEPTH_TEST);
+    
     gl.clearColor(0, 0, 0, 0);
     
     // ------------------ Time Init ------------------
@@ -322,6 +325,7 @@ function main()
             var teaPotShaderProjectionUniformLocation = gl.getUniformLocation(teaPotShaderProgram, "projection");
             var teaPotShaderLightUniformLocation = gl.getUniformLocation(teaPotShaderProgram, "lightPos");
             var teaPotShaderLightVPUniformLocation = gl.getUniformLocation(teaPotShaderProgram, "lightVP");
+            var teaPotShaderViewPosUniformLocation = gl.getUniformLocation(teaPotShaderProgram, "viewPos");
 
             // make a shader program and a vao for the loaded mesh
             var teapotVAO = gl.createVertexArray();
@@ -345,7 +349,7 @@ function main()
             mat4.scale(model, model, teapotScale);
             mat4.translate(model, model, [0., 0., 0.]);
             mat4.rotateX(model, model, -Math.PI / 2);
-
+            mat4.rotateZ(model, model, -Math.PI / 1);
             // Note: arrayedTriCount is the the number of triangles to be rendered, so since there is 9 floats in stride,
             // it must be the size of the interleaved array / 9
             renderables.push(
@@ -359,6 +363,7 @@ function main()
                                     time: teaPotShaderTimeUniformLocation,
                                     light: teaPotShaderLightUniformLocation,
                                     lightVP: teaPotShaderLightVPUniformLocation,
+                                    viewPos: teaPotShaderViewPosUniformLocation,
                                     model: teaPotShaderModelUniformLocation,
                                     view: teaPotShaderViewUniformLocation,
                                     projection: teaPotShaderProjectionUniformLocation
@@ -366,10 +371,14 @@ function main()
                 });
         }
         
+        
+        var lightUp = vec4.fromValues(0., 1., 0., 1.);
+
         if(renderables.length != 0)
         {
             // ------------------ Depth Map Pass ------------------
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.cullFace(gl.FRONT);
             gl.viewport(0, 0, depthTextureSize, depthTextureSize);
             gl.bindFramebuffer(gl.FRAMEBUFFER, depthFramebuffer);
             gl.useProgram(depthShaderProgram);
@@ -385,6 +394,7 @@ function main()
 
             // ------------------ Viewing Pass ------------------
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.disable(gl.CULL_FACE);
             resize(gl.canvas);
             gl.bindTexture(gl.TEXTURE_2D, depthTexture);
 
@@ -411,12 +421,6 @@ function main()
                 gl.bindVertexArray(renderables[i].vao);
                 gl.useProgram(renderables[i].program);
                 
-                if(renderables[i].uniformLocations[0]== "teapot")
-                {
-                    let aRotMat4 = mat4.create();
-                    mat4.rotateY(aRotMat4, aRotMat4, 0.2 * seconds);
-                    renderables[i].transform *= aRotMat4;
-                }
                 // pass uniforms
                 for( let uniform in renderables[i].uniformLocations)
                 {
@@ -433,6 +437,9 @@ function main()
                             break;
                         case "lightVP":
                             gl.uniformMatrix4fv(renderables[i].uniformLocations[uniform], false, lightVP);
+                            break;
+                        case "viewPos":
+                            gl.uniform3f(renderables[i].uniformLocations[uniform], camPos[0], camPos[1], camPos[2]);
                             break;
                         case "model":
                             gl.uniformMatrix4fv(renderables[i].uniformLocations[uniform], false, renderables[i].transform);
@@ -479,7 +486,7 @@ function main()
 
         if(event.which == 1)
         {
-            console.log("first mouse btn pressed");
+            //console.log("first mouse btn pressed");
             firstMouseBtnRayCastSwitch = true;
         }
         else if (event.which == 2) 
@@ -562,18 +569,16 @@ function main()
             if(setPanningDirectionSwitch)
             {
                 vec3.normalize(cu, [camUp[0], camUp[1], camUp[2]]);
-                console.log("the up is: " + vec3.str(cu));
+                //console.log("the up is: " + vec3.str(cu));
                 vec3.subtract(cf, targetPos, [camPos[0], camPos[1], camPos[2]]);
                 vec3.normalize(cf, cf);
-                console.log("the forward is: " + vec3.str(cf));
+                //console.log("the forward is: " + vec3.str(cf));
                 vec3.cross(cr, cf, cu);
-                console.log("the right is: " + vec3.str(cr));
+                //console.log("the right is: " + vec3.str(cr));
                 setPanningDirectionSwitch = false;
             }
 
-            let interopolatingVal = camRadius/maxCamRadius;
             let panFactor = 10.;
-            //panFactor = (1 - interopolatingVal)*(panFactor/4) + interopolatingVal * (panFactor/2);
 
             let relativeDiff = vec3.create();
             vec3.subtract(relativeDiff, clickRayDirWorld, rayDirWorld);

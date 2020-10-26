@@ -19,7 +19,7 @@ var depthMapFS = `#version 300 es
 
 precision highp float;
 
-#define BIAS (0.01)
+#define BIAS (0.005)
 
 void main()
 {
