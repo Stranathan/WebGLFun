@@ -62,13 +62,12 @@ float ShadowCalculation(vec4 fragPosLightSpace)
 
     // learnOpenGL
     //float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+
     // opengl-tutorial.org
     float cosTheta = clamp(dot(normal, lightDir), 0., 1.);
-    float bias = 0.004*tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
+    float bias = 0.002*tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
     bias = clamp(bias, 0. , 0.01);
 
-    // check whether current frag pos is in shadow
-    // float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
     // PCF
     float shadow = 0.0;
     vec2 texelSize = vec2(1. / 1024., 1. / 1024.); // textureSize(shadowMap, 0);
@@ -101,7 +100,6 @@ void main()
 
     vec3 ambient = 0.2 * lightColor;
 
-    
     // diffuse
     vec3 lightDir = normalize(lightPos - FragPos);
     float diff = max(dot(lightDir, normal), 0.0);

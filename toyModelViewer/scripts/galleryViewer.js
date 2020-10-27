@@ -394,7 +394,8 @@ function main()
 
             // ------------------ Viewing Pass ------------------
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            gl.disable(gl.CULL_FACE);
+            //gl.disable(gl.CULL_FACE);
+			gl.cullFace(gl.BACK);
             resize(gl.canvas);
             gl.bindTexture(gl.TEXTURE_2D, depthTexture);
 
