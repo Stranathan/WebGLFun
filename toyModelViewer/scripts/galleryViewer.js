@@ -10,14 +10,23 @@ var vec3 = glMatrix.vec3;
 var vec4 = glMatrix.vec4;
 var mat4 = glMatrix.mat4;
 
+var canvas = document.getElementById("cc");
+var gl = canvas.getContext("webgl2");
+
+//let configurables = { allowTaint: true}; 
+
+html2canvas(document.body).then(textureCanvas =>{
+    textureCanvas.id = "textureCanvas";
+    document.body.appendChild(textureCanvas);
+    main();
+});
+
 function main() 
 {
     // ------------------ Initialization ----------------
-    // --------------------------------------------------
-    var canvas = document.getElementById("cc");
-    var gl = canvas.getContext("webgl2");
     if (!gl) 
     {
+        console.log("No soup for you");
         return;
     }
     // script was deffered, so clientWidth exists and is determined by CSS display width
@@ -641,6 +650,86 @@ function main()
                 vec4.add(camPos, camPos, vec4.fromValues(relativePos[0], relativePos[1], relativePos[2], 0.));
             }
         }
+    }
+    function onMouseDown(event)
+    {
+    }
+    function onMouseMove(event)
+    {
+        // NDC mouse coords to agree with shader
+        let xx = ( event.clientX - .5 * gl.canvas.width ) / gl.canvas.height;
+        let yy = -( event.clientY - .5 * gl.canvas.height ) / gl.canvas.height;
+
+        mousePositions.shift(); // pop first element
+        mousePositions.shift(); // pop first element
+        mousePositions.push(xx); // push onto end
+        mousePositions.push(yy); // push onto end
+
+        //console.log("the last coordinate = (" + mousePositions[mousePositions.length - 2] + ", " + mousePositions[mousePositions.length - 1] + ")");
+        idle = false;
+
+        clearTimeout(timeout);
+        timeout = setTimeout
+        (
+            function()
+            {
+                let idleTimer = 0;
+                let circRad = .0008;
+                function* idleAnimation()
+                {
+                    while(idle)
+                    {
+                        let cos = Math.cos(2.2 * idleTimer - 1.);
+                        let sin = Math.sin(2.2 * idleTimer - 1.);
+                        
+                        mousePositions[38] = mousePositions[38] + (cos * circRad);
+                        mousePositions[39] = mousePositions[39] + (sin * circRad);
+                        
+                        let cos2 = Math.cos(2.9 * idleTimer - cos);
+                        let sin2 = Math.sin(2.9 * idleTimer - sin);
+
+                        mousePositions[36] = mousePositions[36] - (cos2 * circRad);
+                        mousePositions[37] = mousePositions[37] - (sin2 * circRad);
+
+                        idleTimer += 8/1000; // seconds
+                        yield delay(8);
+                    }
+                    
+                }
+
+                function* tailDecay()
+                {
+                    let numCircles = Math.round(mousePositions.length / 2);
+                    for(let ii = 0; ii < numCircles; ii++)
+                    {
+                        let xxx = mousePositions[38];
+                        let yyy = mousePositions[39];
+                                                
+                        mousePositions.shift();
+                        mousePositions.shift();
+    
+                        mousePositions.push(xxx);
+                        mousePositions.push(yyy);
+
+                        yield delay(8);
+                        if(ii == Math.round(numCircles - 1))
+                        {
+                            idle = true;
+                            console.log("animation finished");
+                            wait(idleAnimation);
+                        }
+                    }
+                }
+                wait(tailDecay);
+            }, 
+            20 // how long to wait before starting timeout
+        );
+    }
+    function onMouseUp(event)
+    {
+    }
+    function onMouseWheel(event)
+    {
     }
 }
 
