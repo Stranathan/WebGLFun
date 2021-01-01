@@ -90,6 +90,7 @@ var unitCube =
 	+1, -1, +1,
 ];
 
+// just testing
 var unitCubeWithFakeTexAndNormals = 
 [
 	// front	  		// front   			// front	

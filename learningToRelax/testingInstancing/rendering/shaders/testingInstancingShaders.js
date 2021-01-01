@@ -109,6 +109,11 @@ in vec3 v_Vertex;
 
 out vec4 fragColor;
 
+float when_gt(float x, float y)
+{
+	return max(sign(x - y), 0.0);
+}
+
 void main() {
 	vec3 to_light;
 	vec3 lightPos = vec3(10, 10, 10);
@@ -123,6 +128,13 @@ void main() {
 	cos_angle = dot(vertex_normal, to_light);
 	cos_angle = clamp(cos_angle, 0.0, 1.0);
 
-	fragColor = vec4(vec3(v_Color) * cos_angle, v_Color.a);
+	vec3 col = vec3(v_Color) * cos_angle + 0.05; // give it some min to stand out against the black
+
+	float colLen = length(col);
+	vec3 additiveCol = when_gt(colLen, 0.1) * vec3(v_Color);
+
+	col += additiveCol;
+
+	fragColor = vec4(col, 1.0);
 }
 `;
