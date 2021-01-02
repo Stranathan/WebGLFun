@@ -47,3 +47,32 @@ function makeInstanceColorsArray(numInstances)
         }
     }
 }
+
+function clamp(min, max, interpolatingNum)
+{
+    return Math.min( Math.max(interpolatingNum, min), max);
+}
+function when_eq(x, y) 
+{
+    return 1.0 - Math.abs(Math.sign(x - y));
+}
+function when_neq(x, y)
+{
+    return Math.abs(Math.sign(x - y));
+}
+function when_gt(x, y)
+{
+    return Math.max(Math.sign(x - y), 0.0);
+}
+function when_lt(x, y)
+{
+    return Math.max(Math.sign(y - x), 0.0);
+}
+function when_ge(x, y)
+{
+    return 1.0 - when_lt(x, y);
+}
+function when_le(x, y)
+{
+    return 1.0 - when_gt(x, y);
+}

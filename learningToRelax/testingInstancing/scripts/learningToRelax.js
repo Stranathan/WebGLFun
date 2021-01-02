@@ -39,7 +39,7 @@ function main()
 
 	// ---------------- Camera/s Init ----------------
     var camRadius = 10.0;
-	// var maxCamRadius = 25;
+	var maxCamRadius = 25;
     var camPos = vec4.fromValues(0, 0, -camRadius, 1); // INTERESANT
     var camUp = vec4.fromValues(0.0, 1.0, 0.0, 1.0); // really world up for gram-schmidt process
     var targetPos = vec3.fromValues(0.0, 0.0, 0.0);
@@ -61,12 +61,9 @@ function main()
 	// ---------------- Animation Controls ----------------
 	var spiralRadius = 3.0;
 	var startingPower = 8;
-	var trigSwitchTimeOffset = 0.0;
-	var hackySwitch = 0;
-	var aLittleBit = 0.0; // this stuff is pretty hacky
 	var theValue = Math.sin(1);
-	var theResponseValue = 0;
-
+	var theOtherValue = 0.570803;
+	const timeIndicesX = [];
 	var AR = 16.0/9.0;
 
     // ---------------- Instance VAO ----------------
@@ -109,6 +106,7 @@ function main()
 		const numFloatsForView = 16; // length
 		// Float32Array(buffer, byteOffset, length)
 		matrices.push(new Float32Array(matrixData.buffer, byteOffsetToMatrix, numFloatsForView));
+		timeIndicesX.push(0.0);
 	}
 	
 	// ---------------- Init Instance Matrices Attrib ----------------
@@ -192,6 +190,10 @@ function main()
         oldTimeStamp = timeStamp;
 		seconds += deltaTime;
 		
+		if(seconds > 30)
+		{
+			seconds += 10. * deltaTime;
+		}
 		// -------- Resize canvas --------
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		resize(gl.canvas);
@@ -199,9 +201,7 @@ function main()
 		gl.useProgram(program);
 		// setup all attributes
 		gl.bindVertexArray(unitCubeVAO);
-	
 		// -------- Update Instance Matrix Data --------
-		
 		for(let i = 0 ; i < matrices.length / 2.0; i++)
 		{
 			let yTranslation = (halfOfNumInstances - i) * yDelta;
@@ -209,33 +209,57 @@ function main()
 			let translationTransform = mat4.create();
 			
 			var theInterpolant = (halfOfNumInstances - i) / halfOfNumInstances;
-			var fakeInterpolant = (halfOfNumInstances - i) / numInstances;
-			
-			if(theInterpolant < 0.4)
-			{
-				aLittleBit = 0.6;
-			}
-			var theFunction = Math.sin(Math.pow(fakeInterpolant, Math.max(0, (theInterpolant + aLittleBit) * (-1. * seconds)  + startingPower)));
-			
-			
-			mat4.translate(matrices[halfOfNumInstances - 1 - i],
-							translationTransform,
-							[xTranslation - spiralRadius * (theFunction),
-							yTranslation + startingY ,
-							0]
-			);
-			mat4.scale(matrices[halfOfNumInstances - 1 - i], matrices[halfOfNumInstances - 1 - i],  [leScale * 1.0/AR, leScale, leScale]);
+			var theFunction = Math.sin(Math.pow(theInterpolant * 0.5, Math.max(0, (theInterpolant + (0.5 * (1. - theInterpolant))) * (-1. * seconds)  + startingPower)));
 
-			let secondColumnTranslationTransform = mat4.create();
-			
-			mat4.translate(
-				matrices[numInstances - 1 - i],
-				secondColumnTranslationTransform,
-				[-xTranslation + spiralRadius * (theFunction),
-				yTranslation + startingY,
-				0]
+			if(theFunction < theValue)
+			{
+				mat4.translate(matrices[halfOfNumInstances - 1 - i],
+								translationTransform,
+								[xTranslation - spiralRadius * theFunction,
+								yTranslation + startingY ,
+								0.0]
 				);
-			mat4.scale(matrices[numInstances - 1 - i], matrices[numInstances - 1 - i],  [leScale * 1.0/AR, leScale, leScale]);
+				mat4.scale(matrices[halfOfNumInstances - 1 - i], matrices[halfOfNumInstances - 1 - i],  [leScale * 1.0/AR, leScale, leScale]);
+				
+				// save the time to offset when piecewise changes --> whatever is last time will be the offset time
+				timeIndicesX[halfOfNumInstances - 1 - i] = seconds;
+
+				// second column
+				let secondColumnTranslationTransform = mat4.create();
+				
+				mat4.translate(
+					matrices[numInstances - 1 - i],
+					secondColumnTranslationTransform,
+					[-xTranslation + spiralRadius * theFunction,
+					yTranslation + startingY,
+					0.0]
+					);
+				mat4.scale(matrices[numInstances - 1 - i], matrices[numInstances - 1 - i],  [leScale * 1.0/AR, leScale, leScale]);
+
+				// save the time to offset when piecewise changes --> whatever is last time will be the offset time
+				timeIndicesX[numInstances - 1 - i] = seconds;
+			}
+			else
+			{
+				mat4.translate(matrices[halfOfNumInstances - 1 - i],
+					translationTransform,
+					[xTranslation - spiralRadius * (Math.cos(theOtherValue +  0.01 + seconds - timeIndicesX[halfOfNumInstances - 1 - i])),
+					yTranslation + startingY,
+					0]
+					);
+				mat4.scale(matrices[halfOfNumInstances - 1 - i], matrices[halfOfNumInstances - 1 - i],  [leScale * 1.0/AR, leScale, leScale]);
+
+				let secondColumnTranslationTransform = mat4.create();
+				
+				mat4.translate(
+					matrices[numInstances - 1 - i],
+					secondColumnTranslationTransform,
+					[-xTranslation + spiralRadius * (Math.cos(theOtherValue + 0.01 + seconds - timeIndicesX[halfOfNumInstances - 1 - i])),
+					yTranslation + startingY,
+					0]
+					);
+				mat4.scale(matrices[numInstances - 1 - i], matrices[numInstances - 1 - i],  [leScale * 1.0/AR, leScale, leScale]);
+			}
 		}
 	
 		// -------- Update Instance Matrix Data --------
