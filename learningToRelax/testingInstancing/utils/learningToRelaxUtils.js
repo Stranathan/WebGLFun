@@ -48,9 +48,18 @@ function makeInstanceColorsArray(numInstances)
     }
 }
 
-function clamp(min, max, interpolatingNum)
+function clamp(interpolatingNum, min, max)
 {
     return Math.min( Math.max(interpolatingNum, min), max);
+}
+function mix(start, end, interpolatingNum)
+{
+    return (1. - interpolatingNum) * start + interpolatingNum * end; 
+}
+function smin(a, b, k)
+{
+    let h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0);
+    return mix( b, a, h ) - k*h*(1.0-h);
 }
 function when_eq(x, y) 
 {
