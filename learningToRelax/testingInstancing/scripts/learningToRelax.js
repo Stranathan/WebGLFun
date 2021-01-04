@@ -39,16 +39,18 @@ function main()
 
 	// ---------------- Camera/s Init ----------------
     var camRadius = 10.0;
-    var camPos = vec4.fromValues(0, 0, -camRadius, 1); // INTERESANT
+    var camPos = vec4.fromValues(0, 0, -2 * camRadius, 1); // INTERESANT
     var camUp = vec4.fromValues(0.0, 1.0, 0.0, 1.0); // really world up for gram-schmidt process
     var targetPos = vec3.fromValues(0.0, 0.0, 0.0);
 
-    // ---------------- MVP Init ----------------
+	// ---------------- MVP Init ----------------
+	var AR = 16.0/9.0;
     var view = mat4.create();
 	mat4.lookAt(view, [camPos[0], camPos[1], camPos[2]], targetPos, [camUp[0], camUp[1], camUp[2]]);
 	
 	var projection = mat4.create();
-	mat4.ortho(projection, -4, 4, -4, 4, 1, 100)
+	var screenSize = 7;
+	mat4.ortho(projection, -screenSize*AR, screenSize*AR, -screenSize, screenSize, 1, 100)
     // let fieldOfVision = 0.5 * Math.PI / 2.;
     // let aspectRatio = gl.canvas.width / gl.canvas.height;
 	// mat4.perspective(projection, fieldOfVision, aspectRatio, 1, 100);
@@ -58,13 +60,10 @@ function main()
 	 const halfOfNumInstances= numInstances / 2;
 
 	// ---------------- Animation Controls ----------------
-	var spiralRadius = 3.0;
+	var spiralRadius = 5.0;
 	var timeDesiredForSeperation = 0.5;
-	var firstStepDownTime = 8; // arbitrary #
-	var secondStepDownTime = 9 * Math.PI / 2.0; // pi/2 + n*4pi
-	var killTime = secondStepDownTime + Math.PI;
-	var AR = 16.0/9.0;
-
+	var killTime = 6;
+	
     // ---------------- Instance VAO ----------------
     getUnitCubeAttribDataFromString
 	const unitCubeVAO = gl.createVertexArray();
@@ -129,8 +128,8 @@ function main()
 
     // ---------------- Init Transforms ----------------
     var yDelta = 0.1;
-    var startingY = -4;
-    var xDelta = yDelta / 2.;
+    var startingY = -screenSize + 1;
+    var xDelta = yDelta * AR;
     var leScale = 0.1;
     for(let i = 0 ; i < matrices.length; i++)
     {
@@ -139,8 +138,6 @@ function main()
             let yTranslation = i * yDelta;
 			let xTranslation = -xDelta;
 			
-			let interpolant = i / halfOfNumInstances;
-
             let translationTransform = mat4.create();
 			mat4.translate(
 				matrices[i],
@@ -148,15 +145,13 @@ function main()
 				[xTranslation,
 				 yTranslation + startingY,
 				 0]);
-            mat4.scale(matrices[i], matrices[i],  [leScale * 1.0/AR, leScale, leScale]);
+            mat4.scale(matrices[i], matrices[i],  [leScale * AR, leScale * AR, leScale]);
         }
         else
         {
             let yTranslation = (i - halfOfNumInstances) * yDelta;
 			let xTranslation = xDelta;
 			
-			let interpolant = (i - halfOfNumInstances)/ halfOfNumInstances;
-
             let translationTransform = mat4.create();
 			mat4.translate(
 				matrices[i],
@@ -164,7 +159,7 @@ function main()
 				[xTranslation,
 				 yTranslation + startingY,
 				 0]);
-            mat4.scale(matrices[i], matrices[i],  [leScale * 1.0/AR, leScale, leScale]);
+            mat4.scale(matrices[i], matrices[i],  [leScale * AR, leScale * AR, leScale]);
         }
     }
 
@@ -191,8 +186,14 @@ function main()
 
 		// change time in stepwise stack structure
 		console.log(seconds);
-		seconds += deltaTime / 4;
-		
+		if(seconds < killTime)
+		{
+			seconds += deltaTime / 8;
+		}		
+		else
+		{
+			seconds += deltaTime / 16;
+		}
 		
 		// -------- Resize canvas --------
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -211,32 +212,22 @@ function main()
 			
 			var theFunctionX;
 
-			if(t < firstStepDownTime)
+			if(t < killTime)
 			{
-				theFunctionX = Math.sin(t * t * t);
-			}
-			else if(t >= firstStepDownTime && t < secondStepDownTime)
-			{
-				let l = Math.min(1, (t-firstStepDownTime) / firstStepDownTime);
-				theFunctionX = (1. - l)*Math.sin(t * t * t) + l *  Math.sin(t * t);
-			}
-			else if(t >= secondStepDownTime && t < killTime)
-			{
-				let l = Math.min(1, (t-secondStepDownTime) / secondStepDownTime);
-				theFunctionX = (1. - l)*Math.sin(t * t) + l *  Math.sin(t);
+				theFunctionX = Math.sin(t * t  * t * t);
 			}
 			else
 			{
-				theFunctionX = Math.sin(t) * Math.exp(-150. * (t -killTime + 1) * (t -killTime+1));
+				theFunctionX = Math.sin(t * t  * t * t * Math.exp(-50.0 * (t - killTime) * (t - killTime)));
 			}
-			
+
 			mat4.translate( matrices[halfOfNumInstances - 1 - i],
 							translationTransform,
 							[xTranslation - spiralRadius * theFunctionX,
 							yTranslation + startingY ,
 							-spiralRadius *  theFunctionX]
 						  );
-			mat4.scale(matrices[halfOfNumInstances - 1 - i], matrices[halfOfNumInstances - 1 - i],  [leScale * 1.0/AR, leScale, leScale]);
+			mat4.scale(matrices[halfOfNumInstances - 1 - i], matrices[halfOfNumInstances - 1 - i],  [leScale * AR, leScale * AR, leScale]);
 			let secondColumnTranslationTransform = mat4.create();
 				
 			mat4.translate(matrices[numInstances - 1 - i],
@@ -245,7 +236,7 @@ function main()
 					       yTranslation + startingY,
 					       +spiralRadius * theFunctionX]
 					      );
-			mat4.scale(matrices[numInstances - 1 - i], matrices[numInstances - 1 - i],  [leScale * 1.0/AR, leScale, leScale]);
+			mat4.scale(matrices[numInstances - 1 - i], matrices[numInstances - 1 - i],  [leScale * AR, leScale * AR, leScale]);
 		}
 	
 		// -------- Update Instance Matrix Data --------
