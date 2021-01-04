@@ -39,8 +39,7 @@ function main()
 
 	// ---------------- Camera/s Init ----------------
     var camRadius = 10.0;
-	var maxCamRadius = 25;
-    var camPos = vec4.fromValues(0, camRadius, -camRadius, 1); // INTERESANT
+    var camPos = vec4.fromValues(0, 0, -camRadius, 1); // INTERESANT
     var camUp = vec4.fromValues(0.0, 1.0, 0.0, 1.0); // really world up for gram-schmidt process
     var targetPos = vec3.fromValues(0.0, 0.0, 0.0);
 
@@ -55,13 +54,15 @@ function main()
 	// mat4.perspective(projection, fieldOfVision, aspectRatio, 1, 100);
 	
 	 // ---------------- Instance Settings
-	 const numInstances = 150;
+	 const numInstances = 250;
 	 const halfOfNumInstances= numInstances / 2;
 
 	// ---------------- Animation Controls ----------------
 	var spiralRadius = 3.0;
-	var timeDesiredForSeperation = 2.0;
-	var leSwitch = 0; 
+	var timeDesiredForSeperation = 0.5;
+	var firstStepDownTime = 8; // arbitrary #
+	var secondStepDownTime = 9 * Math.PI / 2.0; // pi/2 + n*4pi
+	var killTime = secondStepDownTime + Math.PI;
 	var AR = 16.0/9.0;
 
     // ---------------- Instance VAO ----------------
@@ -128,7 +129,7 @@ function main()
 
     // ---------------- Init Transforms ----------------
     var yDelta = 0.1;
-    var startingY = -3.7;
+    var startingY = -4;
     var xDelta = yDelta / 2.;
     var leScale = 0.1;
     for(let i = 0 ; i < matrices.length; i++)
@@ -189,25 +190,10 @@ function main()
 		
 
 		// change time in stepwise stack structure
-		if(seconds < 10 && leSwitch == 0)
-		{
-			seconds += deltaTime / 4;
-		}
-		// else if(seconds >= 10 && seconds  < 20)
-		// {
-		// 	seconds += deltaTime / 8;
-		// }
-		// else if(seconds >= 20 && seconds < 60)
-		// {
-		// 	seconds += deltaTime / 16;
-		// }
-		else
-		{
-			leSwitch = 1;
-			seconds -= deltaTime / 4;
-		}
-
 		console.log(seconds);
+		seconds += deltaTime / 4;
+		
+		
 		// -------- Resize canvas --------
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		resize(gl.canvas);
@@ -220,22 +206,44 @@ function main()
 			let translationTransform = mat4.create();
 			let interpolant =  (halfOfNumInstances - i) / halfOfNumInstances;
 
+			// this is instance "time", unique copy of global time per instance
 			let t = Math.max(0, seconds + -1.0 * (timeDesiredForSeperation - interpolant));
+			
+			var theFunctionX;
 
+			if(t < firstStepDownTime)
+			{
+				theFunctionX = Math.sin(t * t * t);
+			}
+			else if(t >= firstStepDownTime && t < secondStepDownTime)
+			{
+				let l = Math.min(1, (t-firstStepDownTime) / firstStepDownTime);
+				theFunctionX = (1. - l)*Math.sin(t * t * t) + l *  Math.sin(t * t);
+			}
+			else if(t >= secondStepDownTime && t < killTime)
+			{
+				let l = Math.min(1, (t-secondStepDownTime) / secondStepDownTime);
+				theFunctionX = (1. - l)*Math.sin(t * t) + l *  Math.sin(t);
+			}
+			else
+			{
+				theFunctionX = Math.sin(t) * Math.exp(-150. * (t -killTime + 1) * (t -killTime+1));
+			}
+			
 			mat4.translate( matrices[halfOfNumInstances - 1 - i],
 							translationTransform,
-							[xTranslation - spiralRadius * Math.sin(t * t),
+							[xTranslation - spiralRadius * theFunctionX,
 							yTranslation + startingY ,
-							0.0]
+							-spiralRadius *  theFunctionX]
 						  );
 			mat4.scale(matrices[halfOfNumInstances - 1 - i], matrices[halfOfNumInstances - 1 - i],  [leScale * 1.0/AR, leScale, leScale]);
 			let secondColumnTranslationTransform = mat4.create();
 				
 			mat4.translate(matrices[numInstances - 1 - i],
 					       secondColumnTranslationTransform,
-					       [-xTranslation + spiralRadius *  Math.sin(t * t),
+					       [-xTranslation + spiralRadius * theFunctionX,
 					       yTranslation + startingY,
-					       0.0]
+					       +spiralRadius * theFunctionX]
 					      );
 			mat4.scale(matrices[numInstances - 1 - i], matrices[numInstances - 1 - i],  [leScale * 1.0/AR, leScale, leScale]);
 		}
