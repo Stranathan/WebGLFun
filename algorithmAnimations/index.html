@@ -3,11 +3,21 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <script src="sortingAlgorithms.js"></script>
-  <script src="main.js" defer></script>
-</head>
+  <!-- css -->
+  	<link rel="stylesheet" href="style/mergeSort.css">
+	<!-- middleWare -->
+	<script src="middleware/gl-matrix-min.js"></script>
+	<!-- utils -->
+	<script src="utils/webGLBoilerplateUtils.js"></script>
+	<script src="utils/geometry.js"></script>
+	<!-- algorithms -->
+	<script src="algos/sortingAlgorithms.js"></script>
+	<!-- shaders -->
+	<script src="rendering/shaders/mergeSortShaders.js"></script>
+	<!-- main -->
+	<script src="scripts/main.js" defer></script></head>
 
 <body>
-  
+	<canvas id="cc"></canvas>
 </body>
 </html>
