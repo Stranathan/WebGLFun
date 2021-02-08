@@ -1,10 +1,9 @@
-var mergeSortVS = `#version 300 es
+var coordinateSystemShadersVS = `#version 300 es
 
 precision highp float;
 
 layout (location=0) in vec3 vertexPos;
-
-uniform mat4 model;
+layout (location=1) in mat4 model;
 
 void main()
 {
@@ -12,7 +11,7 @@ void main()
 }
 `
 
-var mergeSortFS = `#version 300 es
+var coordinateSystemShadersFS = `#version 300 es
 
 precision highp float;
 
@@ -20,10 +19,9 @@ out vec4 fragColor;
 
 uniform vec2 resolution;
 uniform float time;
-uniform float radCol;
 
 void main()
 {
-    vec3 col = vec3(0.37 * radCol , 0.44 * radCol, 0.95 *radCol);
+    vec3 col = vec3(1., 0.1, 0.9);
     fragColor = vec4(col, 1.);
 }`

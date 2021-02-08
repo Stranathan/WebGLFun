@@ -10,8 +10,23 @@ const canvas = document.getElementById("cc");
 const gl = canvas.getContext('webgl2');
 
 // ---- settings
-const baseScale = 0.2;
+const baseScale = 0.15;
 const circleSideNum = 30;
+var circlePathRadius = 0.7;
+var AR = gl.canvas.width / gl.canvas.height;
+var animationSwitch = false;
+var tt = 0;
+var animationCount = 0;
+
+
+// ---- The lines
+let x1 = -1.5;
+let y1 = 0.7;
+let x2 = 0.7;
+let y2 = y1;
+
+let x3 = x2 - x1;
+let y3 = y1 - 0.7 / 2;
 
 function main() 
 {
@@ -19,27 +34,35 @@ function main()
 
     function sortStuff(e)
     {
-        if(arrayOfCirclesToSort != null)
+        if(animationSwitch == false)
         {
-            arrayOfCirclesToSort = mergeSort(arrayOfCirclesToSort);
+            animationSwitch = true;
+            animationCount += 1;
         }
     }
 
-    var numberOfCirclesToSort = 16;
+    var numberOfCirclesToSort = 8;
     var arrayOfCirclesToSort = []
+
     for(let i = 0; i < numberOfCirclesToSort; i++)
     {
         let aLittleBit = 0.1
         let rnd = Math.random() + aLittleBit; // [0.1, 1]
         arrayOfCirclesToSort.push(rnd); // random array of radii, really the scale
     }
-    var circleBoundaryCoordsObj = makeACircleBoundary(numberOfCirclesToSort, 0.7);
 
-	// ---------------- Init Shader program ----------------
+    // ---- positions along circle of radius circlePathRadius
+    var circleBoundaryCoordsObj = makeACircleBoundary(numberOfCirclesToSort, circlePathRadius);
+    var firstLineCoordsObj = makeALine(x1 * AR, y1, x2 * AR, y2, numberOfCirclesToSort);
+    var secondLineCoordsObj = makeALine(x1 * AR, y3, x3 * AR, y3, numberOfCirclesToSort);
+    var thirdLineCoordsObj = makeALine(x3 * AR, y3, x2 * AR, y3, numberOfCirclesToSort);
+
+    // ---------------- Init Shader program ----------------
 	var program = createProgramFromSources(gl, mergeSortVS, mergeSortFS);
 	var programUTime = gl.getUniformLocation(program, "time");
     var programUResolution = gl.getUniformLocation(program, "resoluton");
     var programUModel = gl.getUniformLocation(program, "model");
+    var programURadCol = gl.getUniformLocation(program, "radCol");
 
 	
 	// ---- Attrib locations
@@ -85,9 +108,24 @@ function main()
         oldTimeStamp = timeStamp;
         seconds += deltaTime;
         
-		// -------- Resize canvas --------
+        //
+        if(animationSwitch == true)
+        {
+            if( tt < 1.0)
+            {
+                tt += deltaTime;
+            }
+            else
+            {
+                animationSwitch = false;
+            }
+        }
+        
+        
+        // -------- Resize canvas --------
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-		resize(gl.canvas);
+        resize(gl.canvas);
+        AR = gl.canvas.width / gl.canvas.height;
 		gl.viewport(0, 0, gl.canvas.width, gl.canvas.height); // [NDC] => [pixels]
 
         // gl.uniformMatrix4fv(programProjectionUniformLocation, false, projection);
@@ -97,12 +135,16 @@ function main()
         for(let i = 0; i < arrayOfCirclesToSort.length; i++)
         {
             let model = mat4.create();
-            mat4.translate(model, model, [circleBoundaryCoordsObj.x[i] * (gl.canvas.height / gl.canvas.width), circleBoundaryCoordsObj.y[i], 0]);
+            mat4.translate(model, model,
+                 [lerp(circleBoundaryCoordsObj.x[i] * (1.0 / AR), firstLineCoordsObj.x[i] * (1.0  / AR), tt),
+                  lerp(circleBoundaryCoordsObj.y[i], firstLineCoordsObj.y[i], tt),
+                   0]);
             mat4.scale(model, model,
                  [baseScale * arrayOfCirclesToSort[i] * (gl.canvas.height / gl.canvas.width),
                   baseScale * arrayOfCirclesToSort[i],
                   baseScale * arrayOfCirclesToSort[i]]);
             gl.uniformMatrix4fv(programUModel, false, model);
+            gl.uniform1f(programURadCol, arrayOfCirclesToSort[i]);
             gl.drawArrays(gl.TRIANGLES, 0, circleObj.numVerts);
         }
 		// -------- Restart Render Loop --------

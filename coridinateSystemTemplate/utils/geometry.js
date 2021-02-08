@@ -88,3 +88,13 @@ function makeALine(x1, y1, x2, y2, numPoints)
     }
     return {x : xPoints, y: yPoints}
 }
+
+var theUnitQuad = 
+[
+    -1, +1, 0,
+    -1, -1, 0,
+    +1, -1, 0,
+    -1, +1, 0,
+    +1, -1, 0,
+    +1, +1, 0
+];

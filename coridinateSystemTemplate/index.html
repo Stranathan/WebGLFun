@@ -1,0 +1,36 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+    <!-- css -->
+  	<link rel="stylesheet" href="style/mergeSort.css">
+	<!-- middleWare -->
+	<script src="middleware/gl-matrix-min.js"></script>
+	<!-- utils -->
+	<script src="utils/webGLBoilerplateUtils.js"></script>
+	<!-- shaders -->
+	<script src="rendering/shaders/mergeSortShaders.js"></script>
+	<!-- main -->
+	<!-- <script src="scripts/main.js" defer></script></head> -->
+
+<body>
+    <canvas id="cc"></canvas>
+    <script>
+        console.time('someFunction')
+
+        someFunction();
+        
+        console.timeEnd('someFunction')
+
+        function someFunction()
+        {
+            let count = 0; 
+            for(let i = 0; i < 1000; i++)
+            {
+                count ++;
+            }
+        }
+    </script>
+</body>
+</html>
