@@ -89,24 +89,56 @@ function main()
             );
     }
     
+    var first = 0;
+    var second = 0;
+    var third = 0;
+    var fourth = 0;
     // ---------------- Make the transform attrib data
     for (let i = 0; i < XZVertLinesInstancesTransforms.length; i++)
     {
-        if( i % 2 == 0)
+        // ----- Note: this is kinda specific to my starting geometry (a line of length 1 at the origin on the z-axis)
+        // positve x
+        if(i < XZVertLinesInstancesTransforms.length / 4)
         {
             let theTransform = mat4.create();
-            let theTestTranslation = [i * 0.2, 0, 0];
-            mat4.translate(XZVertLinesInstancesTransforms[i], theTransform, theTestTranslation);
-            mat4.scale(XZVertLinesInstancesTransforms[i], XZVertLinesInstancesTransforms[i], [1, 1, 100]); 
+            let theTranslation = [i * gridRes, 0., 0.];
+            let theScale = [1, 1, lineLength];
+            mat4.scale(XZVertLinesInstancesTransforms[i], theTransform, theScale);
+            mat4.translate(XZVertLinesInstancesTransforms[i], XZVertLinesInstancesTransforms[i], theTranslation);
         }
+        // negative x
+        else if( i >= XZVertLinesInstancesTransforms.length / 4 && i < XZVertLinesInstancesTransforms.length / 2)
+        {
+            let moddedI = i % (XZVertLinesInstancesTransforms.length / 4);
+            let theTransform = mat4.create();
+            let theTranslation = [-moddedI * gridRes, 0., 0.];
+            let theScale = [1, 1, lineLength];
+            mat4.scale(XZVertLinesInstancesTransforms[i], theTransform, theScale);
+            mat4.translate(XZVertLinesInstancesTransforms[i], XZVertLinesInstancesTransforms[i], theTranslation);        }
+        // positve z
+        else if(i >= XZVertLinesInstancesTransforms.length / 2 && i < (3/4) * XZVertLinesInstancesTransforms.length)
+        {
+            let moddedI = i % (XZVertLinesInstancesTransforms.length / 2);
+            let theTransform = mat4.create();
+            let theTranslation = [moddedI * gridRes, 0., 0.];
+            let theScale = [1, 1, lineLength];
+            mat4.rotateY(XZVertLinesInstancesTransforms[i], theTransform, Math.PI * 0.5);
+            mat4.scale(XZVertLinesInstancesTransforms[i], XZVertLinesInstancesTransforms[i], theScale);
+            mat4.translate(XZVertLinesInstancesTransforms[i], XZVertLinesInstancesTransforms[i], theTranslation);
+        }
+        // negative z
         else
         {
+            let moddedI = i % ((3/4) * XZVertLinesInstancesTransforms.length);
             let theTransform = mat4.create();
-            let theTestTranslation = [-i * 0.2, 0, 0];
-            mat4.translate(XZVertLinesInstancesTransforms[i], theTransform, theTestTranslation);
-            mat4.scale(XZVertLinesInstancesTransforms[i], XZVertLinesInstancesTransforms[i], [1, 1, 100]); 
+            let theTranslation = [-moddedI * gridRes, 0., 0.];
+            let theScale = [1, 1, lineLength];
+            mat4.rotateY(XZVertLinesInstancesTransforms[i], theTransform, Math.PI * 0.5);
+            mat4.scale(XZVertLinesInstancesTransforms[i], XZVertLinesInstancesTransforms[i], theScale);
+            mat4.translate(XZVertLinesInstancesTransforms[i], XZVertLinesInstancesTransforms[i], theTranslation);
         }
     }
+
     // ---------------- Set the transform attrib
     const XZVertLinesAttribBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, XZVertLinesAttribBuffer);

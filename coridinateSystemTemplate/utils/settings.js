@@ -1,6 +1,6 @@
 
 // ---------------- *Program Specific Settings* ----------------
-var numXZVerticalInstances = 50;
+var numXZVerticalInstances = 200;
 
 // ---------------- *Rendering Settings* ----------------
 
@@ -8,7 +8,8 @@ var numXZVerticalInstances = 50;
 var clearCol = [0.1568, 0.1568, 0.1568, 1.0]; // RGB 40 --> 40 / 250
 var bytesPerMatrix = 4 * 16;
 
-var lineLength = 500;
+var gridRes = 0.5;
+var lineLength = (numXZVerticalInstances / 2.0) * gridRes;
 
 // -------- glMatrix Lib Aliases --------
 var vec2 = glMatrix.vec2;
