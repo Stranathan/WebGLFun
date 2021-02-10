@@ -159,12 +159,27 @@ function makeALine(x1, y1, x2, y2, numPoints)
 /*
     Misc Unit Geometry
 */
-var theUnitXZVericalLine = 
+var theUnitZLine = 
 [
     0.0, 0.0, -0.5,
     0.0, 0.0, +0.5,
 ]
-var theUnitXZHorizontalLine = 
+var theUnitXLineWithColors = 
+[
+    -0.5, 0.0, 0.0, 0.989, 0.739, 0.231,
+    +0.5, 0.0, 0.0, 0.989, 0.739, 0.231,
+]
+var theUnitYLineWithColors = 
+[
+    0.0, -0.5, 0.0, 0.23, 0.52, 0.25,
+    0.0, +0.5, 0.0, 0.23, 0.52, 0.25,
+]
+var theUnitZLineWithColors = 
+[
+    0.0, 0.0, -0.5, 0.0, 0.2, 0.4,
+    0.0, 0.0, +0.5, 0.0, 0.2, 0.4,
+]
+var theUnitXLine = 
 [
     -0.5, 0.0, 0.0,
     +0.5, 0.0, 0.0,
@@ -177,4 +192,14 @@ var theUnitQuad =
     -1, +1, 0,
     +1, -1, 0,
     +1, +1, 0
+];
+
+var theUnitQuadWithColors = 
+[
+    -1, +1, 0, 1., 0., 1.,
+    -1, -1, 0, 1., 0., 1.,
+    +1, -1, 0, 1., 0., 1.,
+    -1, +1, 0, 1., 0., 1.,
+    +1, -1, 0, 1., 0., 1.,
+    +1, +1, 0, 1., 0., 1.,
 ];

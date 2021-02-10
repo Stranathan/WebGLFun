@@ -3,20 +3,24 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-    <!-- css -->
-  	<link rel="stylesheet" href="style/coordinateSystemTemplate.css">
+  <!-- css -->
+  <link rel="stylesheet" href="style/coordinateSystemTemplate.css">
 	<!-- middleWare -->
 	<script src="middleware/gl-matrix-min.js"></script>
-    <!-- utils -->
-    <script src="utils/settings.js"></script>
-    <script src="utils/geometry.js"></script>
-    <script src="utils/webGLBoilerplateUtils.js"></script>
+  <!-- utils -->
+  <script src="utils/settings.js"></script>
+  <script src="utils/geometry.js"></script>
+  <script src="utils/webGLBoilerplateUtils.js"></script>
 	<!-- shaders -->
 	<script src="rendering/shaders/xyPlaneVerticalProgramShaders.js"></script>
+  <script src="rendering/shaders/basisVectorsShader.js"></script>
 	<!-- main -->
 	<script src="scripts/main.js" defer></script></head>
 
 <body>
+  <div class="container">
     <canvas id="cc"></canvas>
+    <div id="divcontainer"></div>
+  </div>
 </body>
 </html>

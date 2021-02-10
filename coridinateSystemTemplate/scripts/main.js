@@ -7,6 +7,22 @@ const gl = canvas.getContext('webgl2');
 
 function main()
 {
+    // look up the divcontainer
+    var divContainerElement = document.querySelector("#divcontainer");
+
+    // make the div
+    var div = document.createElement("div");
+
+    // assign it a CSS class
+    div.className = "floating-div";
+
+    // make a text node for its content
+    var textNode = document.createTextNode("");
+    div.appendChild(textNode);
+
+    // add it to the divcontainer
+    divContainerElement.appendChild(div);
+
     // ---------------- XZ-Plane grid lines shader program ----------------
 	var xzPlaneVerticalProgram = createProgramFromSources(gl, xzPlaneVerticalProgramVS, xzPlaneVerticalProgramFS);
 	var xzPlaneVerticalProgramUTime = gl.getUniformLocation(xzPlaneVerticalProgram, "time");
@@ -16,8 +32,8 @@ function main()
     
     // ------------------ Camera/s Init------------------
     var camRadius = 20.;
-    var maxCamRadius = 40;
-    var camPos = vec4.fromValues(-2, 2, -2., 1.);
+    var maxCamRadius = 100;
+    var camPos = vec4.fromValues(0, 3, -2., 1.);
     var camUp = vec4.fromValues(0.0, 1.0, 0.0, 1.0); // really world up for gram-schmidt process
     var targetPos = vec3.fromValues(0.0, 0.0, 0.0);
 
@@ -41,9 +57,7 @@ function main()
 
     var clickRayDirWorld = null;
     var mouseMoveRotionAxis = vec3.create();
-    var omega = 0;
     //var deltaTime = 0.0167; // init to 60fps just in case to make compiler happy (value not set til render loop)
-    var spinDecayTimer = 10;
 
     // ------------------ Event Handling Init------------------
     window.addEventListener('mousedown', function(event) { onMouseDown(event);});
@@ -56,7 +70,7 @@ function main()
     gl.bindVertexArray(xzPlaneVerticalVAO);
     var xzPlaneVerticalVBO = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, xzPlaneVerticalVBO);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(theUnitXZVericalLine), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(theUnitZLine), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(positionAttribLoc);
     gl.vertexAttribPointer(positionAttribLoc, 3, gl.FLOAT, false, 0, 0);
 
@@ -89,10 +103,6 @@ function main()
             );
     }
     
-    var first = 0;
-    var second = 0;
-    var third = 0;
-    var fourth = 0;
     // ---------------- Make the transform attrib data
     for (let i = 0; i < XZVertLinesInstancesTransforms.length; i++)
     {
@@ -169,17 +179,122 @@ function main()
         gl.vertexAttribDivisor(attribLocation, 1);
     }
 
+    // ---------------- Basis Vectors Init ----------------
+    var renderables = [];
+
+
+    var basisVectorsProgram = createProgramFromSources(gl, basisVectorsVS, basisVectorsFS);
+    var basisVectorsProgramUTime = gl.getUniformLocation(basisVectorsProgram, "time");
+    var basisVectorsProgramUResolution = gl.getUniformLocation(basisVectorsProgram, "resoluton");
+    var basisVectorsProgramUModel = gl.getUniformLocation(basisVectorsProgram, "model");
+    var basisVectorsProgramUView = gl.getUniformLocation(basisVectorsProgram, "view");
+    var basisVectorsProgramUProjection = gl.getUniformLocation(basisVectorsProgram, "projection");
+
+    // TESTING
+    var quadVAO = gl.createVertexArray();
+    var quadVBO = gl.createBuffer();
+    gl.bindVertexArray(quadVAO);
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadVBO);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(theUnitQuadWithColors), gl.STATIC_DRAW);
+    var stride = 6 * 4; // byte stride
+    var offset = 0;
+    gl.vertexAttribPointer(positionAttribLoc, 3, gl.FLOAT, false, stride, offset);
+    gl.enableVertexAttribArray(positionAttribLoc);
+    offset = 3 * 4; // byte offset
+    gl.vertexAttribPointer(colorAttribLoc, 3, gl.FLOAT, false, stride, offset);
+    gl.enableVertexAttribArray(colorAttribLoc);
+
+    let quadModel = mat4.create();
+    mat4.scale(quadModel,quadModel, [2.,2.,2.]);  
+
+    renderables.push(
+        {tag: "quad",
+        transform: quadModel,
+        vao: quadVAO,
+        primitiveType: gl.TRIANGLES,
+        vertCount: 6,
+        program: basisVectorsProgram,
+        uniformLocations: {resolution: basisVectorsProgramUResolution,
+                            time: basisVectorsProgramUTime,
+                            model: basisVectorsProgramUModel,
+                            view: basisVectorsProgramUView,
+                            projection: basisVectorsProgramUProjection
+                        }
+        });
+    // ---- THE Y AXIS
+    var yVAO = gl.createVertexArray();
+    var yVBO = gl.createBuffer();
+    gl.bindVertexArray(yVAO);
+    gl.bindBuffer(gl.ARRAY_BUFFER, yVBO);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(theUnitYLineWithColors), gl.STATIC_DRAW);
+    var stride = 6 * 4; // byte stride
+    var offset = 0;
+    gl.vertexAttribPointer(positionAttribLoc, 3, gl.FLOAT, false, stride, offset);
+    gl.enableVertexAttribArray(positionAttribLoc);
+    offset = 3 * 4; // byte offset
+    gl.vertexAttribPointer(colorAttribLoc, 3, gl.FLOAT, false, stride, offset);
+    gl.enableVertexAttribArray(colorAttribLoc);
+
+    let yModel = mat4.create();
+    mat4.scale(yModel,yModel, [lineLength,lineLength,lineLength]);
+
+    renderables.push(
+        {tag: "y-axis",
+        transform: yModel,
+        vao: yVAO,
+        primitiveType: gl.LINES,
+        vertCount: 2,
+        program: basisVectorsProgram,
+        uniformLocations: {resolution: basisVectorsProgramUResolution,
+                            time: basisVectorsProgramUTime,
+                            model: basisVectorsProgramUModel,
+                            view: basisVectorsProgramUView,
+                            projection: basisVectorsProgramUProjection
+                        }
+        });
+    // ---- THE X AXIS
+    var xVAO = gl.createVertexArray();
+    var xVBO = gl.createBuffer();
+    gl.bindVertexArray(xVAO);
+    gl.bindBuffer(gl.ARRAY_BUFFER, xVBO);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(theUnitXLineWithColors), gl.STATIC_DRAW);
+    var stride = 6 * 4; // byte stride
+    var offset = 0;
+    gl.vertexAttribPointer(positionAttribLoc, 3, gl.FLOAT, false, stride, offset);
+    gl.enableVertexAttribArray(positionAttribLoc);
+    offset = 3 * 4; // byte offset
+    gl.vertexAttribPointer(colorAttribLoc, 3, gl.FLOAT, false, stride, offset);
+    gl.enableVertexAttribArray(colorAttribLoc);
+
+    let xModel = mat4.create();
+    mat4.scale(xModel,xModel, [lineLength,lineLength,lineLength]);
+
+    renderables.push(
+        {tag: "x-axis",
+        transform: xModel,
+        vao: xVAO,
+        primitiveType: gl.LINES,
+        vertCount: 2,
+        program: basisVectorsProgram,
+        uniformLocations: {resolution: basisVectorsProgramUResolution,
+                            time: basisVectorsProgramUTime,
+                            model: basisVectorsProgramUModel,
+                            view: basisVectorsProgramUView,
+                            projection: basisVectorsProgramUProjection
+                        }
+        });
+
     // ---------------- WebGL State Init ----------------
     gl.clearColor(clearCol[0], clearCol[1], clearCol[2], clearCol[3]);
     gl.enable(gl.DEPTH_TEST);
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.useProgram(xzPlaneVerticalProgram);
 
     // ---------------- Time Init ----------------
     var oldTimeStamp = 0.0;
     var seconds = 0.0;
     var deltaTime = 0.0;
 
+    var clipspace = vec4.fromValues(1, 1, 1, 1); 
     // ---------------- Start Render Loop ----------------
     window.requestAnimationFrame(render);
 
@@ -195,6 +310,10 @@ function main()
         oldTimeStamp = timeStamp;
         seconds += deltaTime;    
 
+        // -------- XZ Plane Render --------
+        gl.bindVertexArray(xzPlaneVerticalVAO);
+        gl.useProgram(xzPlaneVerticalProgram);
+
         // update camPos view matrix
         mat4.lookAt(view, [camPos[0], camPos[1], camPos[2]], targetPos, [camUp[0], camUp[1], camUp[2]]);
 
@@ -205,6 +324,61 @@ function main()
         gl.uniformMatrix4fv(xzPlaneVerticalProgramUProjection, false, projection);
 
         gl.drawArraysInstanced(gl.LINES, 0, 2, numXZVerticalInstances);
+
+        // -------- Basis Vectors Render --------
+        for(let i = 0; i < renderables.length; i++)
+        {
+            // bind vao
+            gl.bindVertexArray(renderables[i].vao);
+            gl.useProgram(renderables[i].program);
+            
+            // pass uniforms
+            for( let uniform in renderables[i].uniformLocations)
+            {
+                switch(uniform)
+                {
+                    case "time":
+                        gl.uniform1f(renderables[i].uniformLocations[uniform], seconds);
+                        break;
+                    case "resolution":
+                        gl.uniform2f(renderables[i].uniformLocations[uniform], gl.canvas.width, gl.canvas.height);
+                        break;
+                    case "model":
+                        gl.uniformMatrix4fv(renderables[i].uniformLocations[uniform], false, renderables[i].transform);
+                        break;
+                    case "view":
+                        gl.uniformMatrix4fv(renderables[i].uniformLocations[uniform], false, view); // this is ok as long as we only have one camera
+                        break;
+                    case "projection":
+                        gl.uniformMatrix4fv(renderables[i].uniformLocations[uniform], false, projection); //  ``
+                        break;
+                    default:
+                        console.log("some weird uniform was attached to the renderable and it doesn't know what to do");
+                }
+            }
+            gl.drawArrays(renderables[i].primitiveType, 0, renderables[i].vertCount);
+        }
+
+        // ---------------- Numbers Render ----------------
+        // compute a clip space position
+        // using the matrix we computed for the F
+        var aTestPoint = [-1, 0., 0., 1.];
+        vec4.transformMat4(clipspace, aTestPoint, view);
+        vec4.transformMat4(clipspace, clipspace, projection);
+        
+        // persepctive division
+        clipspace[0] /= clipspace[3];
+        clipspace[1] /= clipspace[3];
+        clipspace[2] /= clipspace[3];
+        
+        // convert from clipspace to pixels
+        var pixelX = (clipspace[0] *  0.5 + 0.5) * gl.canvas.width; // Note: this is actually the negative of what it should be
+        var pixelY = (clipspace[1] * -0.5 + 0.5) * gl.canvas.height;
+        
+        // position the div
+        div.style.left = Math.floor(pixelX) + "px";
+        div.style.top  = Math.floor(pixelY) + "px";
+        textNode.nodeValue = 1;
 
         // -------- Restart Render Loop --------
         window.requestAnimationFrame(render);
@@ -286,8 +460,6 @@ function main()
             vec4.transformMat4(camUp, camUp, rotMat);
             vec4.transformMat4(camPos, camPos, rotMat);
             
-            omega = angle;
-
             // we need to get the angle per mouse move, --> set the vector from last
             // move to this vector so the next mouse move calculation is possible
             clickRayDirWorld = rayDirWorld;
@@ -349,7 +521,6 @@ function main()
     {
         if(firstMouseBtnRayCastSwitch == true)
         {
-            spinDecayTimer = 0;
             firstMouseBtnRayCastSwitch = false;
         }
         if(secondMouseBtnRayCastSwitch == true)
