@@ -1,0 +1,32 @@
+body{
+    margin: 0;
+    padding: 0;
+}
+
+#cc{
+    width: 100vw;
+    height: 100vh;
+    display: block;
+}
+
+.container {
+    position: relative;
+    overflow: none;
+}
+  
+#divcontainer 
+{
+    color: bisque;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    overflow: hidden;
+}
+  
+.floating-div {
+    font-size: x-large;
+    position: absolute;
+}
