@@ -27,12 +27,13 @@ function main()
     // ---------------- Helper Lines to be replaced by fragment shader ----------------
     var renderables = [];
 
-    var helperLinesProgram = createProgramFromSources(gl, mergeSortAnimationShadersVS, mergeSortAnimationShadersFS);
-    var helperLinesProgramUTime = gl.getUniformLocation(helperLinesProgram, "time");
-    var helperLinesProgramUResolution = gl.getUniformLocation(helperLinesProgram, "resolution");
-    var helperLinesProgramUModel = gl.getUniformLocation(helperLinesProgram, "model");
-    var helperLinesProgramUView = gl.getUniformLocation(helperLinesProgram, "view");
-    var helperLinesProgramUProjection = gl.getUniformLocation(helperLinesProgram, "projection");
+    var backgroundGridProgram = createProgramFromSources(gl, backgroundGridVS, backgroundGridFS);
+    var backgroundGridProgramUGridResMul = gl.getUniformLocation(backgroundGridProgram, "gridResMult");
+    var backgroundGridProgramUTime = gl.getUniformLocation(backgroundGridProgram, "time");
+    var backgroundGridProgramUResolution = gl.getUniformLocation(backgroundGridProgram, "resolution");
+    var backgroundGridProgramUModel = gl.getUniformLocation(backgroundGridProgram, "model");
+    var backgroundGridProgramUView = gl.getUniformLocation(backgroundGridProgram, "view");
+    var backgroundGridProgramUProjection = gl.getUniformLocation(backgroundGridProgram, "projection");
 
     // TESTING
     var quadVAO = gl.createVertexArray();
@@ -55,12 +56,13 @@ function main()
         vao: quadVAO,
         primitiveType: gl.TRIANGLES,
         vertCount: 6,
-        program: helperLinesProgram,
-        uniformLocations: {resolution: helperLinesProgramUResolution,
-                            time: helperLinesProgramUTime,
-                            model: helperLinesProgramUModel,
-                            view: helperLinesProgramUView,
-                            projection: helperLinesProgramUProjection
+        program: backgroundGridProgram,
+        uniformLocations: { gridResMult: backgroundGridProgramUGridResMul,
+                            resolution: backgroundGridProgramUResolution,
+                            time: backgroundGridProgramUTime,
+                            model: backgroundGridProgramUModel,
+                            view: backgroundGridProgramUView,
+                            projection: backgroundGridProgramUProjection
                         }
         });
     
@@ -86,7 +88,7 @@ function main()
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
         let tmpTransform = mat4.create();
-        mat4.translate(tmpTransform, tmpTransform, [theGUI.x, theGUI.y, theGUI.z]);
+        mat4.translate(tmpTransform, tmpTransform, [theGUI.gridX, theGUI.gridY, theGUI.gridZ]);
         renderables[0].transform = tmpTransform;
 
         // -------- Time Update -------- 
@@ -111,6 +113,9 @@ function main()
             {
                 switch(uniform)
                 {
+                    case "gridResMult":
+                        gl.uniform1f(renderables[i].uniformLocations[uniform], theGUI.gridResMultiplier);
+                        break;
                     case "time":
                         gl.uniform1f(renderables[i].uniformLocations[uniform], seconds);
                         break;
