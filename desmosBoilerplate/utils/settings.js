@@ -1,16 +1,13 @@
 
 // ---------------- *Program Specific Settings* ----------------
-var numCirclesToSort = 16;
+var numCirclesToSort = 1;
 
 // ---------------- *Rendering Settings* ----------------
 
 // -------- Misc --------
 var clearCol = [0.1568, 0.1568, 0.1568, 1.0]; // RGB 40 --> 40 / 250
 var bytesPerMatrix = 4 * 16;
-var circleSideNum = 30;
-var circlesLargestScale = 1.5; // used in rng for scale range
-var circleBoundaryRadius = 3;
-
+var circleSideNum = 60;
 // -------- glMatrix Lib Aliases --------
 var vec2 = glMatrix.vec2;
 var vec3 = glMatrix.vec3;

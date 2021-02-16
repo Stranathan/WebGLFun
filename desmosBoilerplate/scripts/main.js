@@ -6,11 +6,6 @@ const gl = canvas.getContext('webgl2');
 
 var theGUI;
 
-
-/*
-    Circletransforms.length == scalesArray.length == translationPointsArr.length
-*/
-
 function preload()
 {
     makeTheGUI();
@@ -29,6 +24,7 @@ function main()
     var projection = mat4.create();
     mat4.ortho(projection, frustumLeft, frustumRight, frustumBottom, frustumTop, frustumNear, frustumFar); // see settings
 
+    // ---------------- Helper Lines to be replaced by fragment shader ----------------
     var renderables = [];
 
     // background shader
@@ -41,6 +37,7 @@ function main()
     var backgroundGridProgramUView = gl.getUniformLocation(backgroundGridProgram, "view");
     var backgroundGridProgramUProjection = gl.getUniformLocation(backgroundGridProgram, "projection");
 
+    // TESTING
     var quadVAO = gl.createVertexArray();
     var quadVBO = gl.createBuffer();
     gl.bindVertexArray(quadVAO);
@@ -72,25 +69,13 @@ function main()
                         }
         });
     
-
-    // ---------------- Scales Array ----------------
-    var scalesArray = [];
-    var translationPointsArr = makeACircleBoundary(numCirclesToSort, circleBoundaryRadius); // js obj {xPoints, yPoints}
-
-    for (let i = 0; i < numCirclesToSort; i++)
-    {
-        let rnd = Math.random() * circlesLargestScale / 2;
-        translationPointsArr.x[i] *= canvas.height / canvas.width;
-        scalesArray.push(rnd);
-    }
-    
-    // ---------------- Instanced Circles ----------------
-
-	var circlesProgram = createProgramFromSources(gl, circlesVS, circlesFS);
-	var circlesProgramUTime = gl.getUniformLocation(circlesProgram, "time");
-    var circlesProgramUResolution = gl.getUniformLocation(circlesProgram, "resoluton");
-    var circlesProgramUView = gl.getUniformLocation(circlesProgram, "view");
-    var circlesProgramUProjection = gl.getUniformLocation(circlesProgram, "projection");
+    //---- #################
+    // ---------------- XZ-Plane grid lines shader program ----------------
+	var xzPlaneVerticalProgram = createProgramFromSources(gl, circlesVS, circlesFS);
+	var xzPlaneVerticalProgramUTime = gl.getUniformLocation(xzPlaneVerticalProgram, "time");
+    var xzPlaneVerticalProgramUResolution = gl.getUniformLocation(xzPlaneVerticalProgram, "resoluton");
+    var xzPlaneVerticalProgramUView = gl.getUniformLocation(xzPlaneVerticalProgram, "view");
+    var xzPlaneVerticalProgramUProjection = gl.getUniformLocation(xzPlaneVerticalProgram, "projection");
 
     var circlesVAO = gl.createVertexArray();
     gl.bindVertexArray(circlesVAO);
@@ -110,26 +95,26 @@ function main()
     /*
         Note:
         We make an array of total size needed for the matrix transforms that will be sent to our attribute
-        this is circleTransformsAtrribData
-        circleTransforms "sees this" in circleTransformsAtrribData.buffer:
+        this is XZVertLinesTotalTransforms
+        XZVertLinesInstancesTransforms "sees this" in XZVertLinesTotalTransforms.buffer:
         (see: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Float32Array/Float32Array)
         "When called with a buffer, and optionally a byteOffset and a length argument, a new typed array view is created that views the specified ArrayBuffer"
-        The goal behind this is that we can just use circleTransforms to manipulate matrix info and the buffer will
+        The goal behind this is that we can just use XZVertLinesInstancesTransforms to manipulate matrix info and the buffer will
         take care of itself, I think
     */
-    const circleTransformsAtrribData = new Float32Array(numCirclesToSort * 16); // 16 floats per mat4, 
-    const circleTransforms = [];
+    const XZVertLinesTotalTransforms = new Float32Array(numCirclesToSort * 16); // 16 floats per mat4, 
+    const XZVertLinesInstancesTransforms = [];
 
     for (let i = 0; i < numCirclesToSort; i++)
     {
         const byteOffsetToMatrix = i * 16 * 4; // 4 bytes per float, each mat4 has 16 floats
         const numFloatsForView = 16;
         // new Float32Array(buffer [, byteOffset [, length]]);
-        circleTransforms.push
+        XZVertLinesInstancesTransforms.push
             (
                 new Float32Array
                     (
-                    circleTransformsAtrribData.buffer,
+                    XZVertLinesTotalTransforms.buffer,
                     byteOffsetToMatrix,
                     numFloatsForView
                     )
@@ -137,16 +122,16 @@ function main()
     }
     
     // ---------------- Make the transform attrib data
-    for (let i = 0; i < circleTransforms.length; i++)
+    for (let i = 0; i < XZVertLinesInstancesTransforms.length; i++)
     {
         let theTransform = mat4.create();
-        mat4.scale(circleTransforms[i], theTransform, [1 * canvas.height / canvas.width, 1, 1]);
+        mat4.scale(XZVertLinesInstancesTransforms[i], theTransform, [0.5 * canvas.height / canvas.width, 0.5, 0.5]);
     }
 
     // ---------------- Set the transform attrib
-    const circleTransformsBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, circleTransformsBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, circleTransformsAtrribData, gl.DYNAMIC_DRAW);
+    const XZVertLinesAttribBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, XZVertLinesAttribBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, XZVertLinesTotalTransforms, gl.DYNAMIC_DRAW);
 
     // ---- if we need to change the transform data, can be done in real time if gl draw hint is set to gl.DYNAMIC_DRAW:
     
@@ -202,33 +187,28 @@ function main()
         renderables[0].transform = tmpTransform;
 
         mat4.ortho(projection, -1. * theGUI.frustumMultiplier, theGUI.frustumMultiplier, -1. * theGUI.frustumMultiplier, theGUI.frustumMultiplier, theGUI.frustumNear, theGUI.frustumFar); // see settings
-        for (let i = 0; i < circleTransforms.length; i++)
+        for (let i = 0; i < XZVertLinesInstancesTransforms.length; i++)
         {
             let theTransform = mat4.create();
             mat4.scale(
-                circleTransforms[i],
+                XZVertLinesInstancesTransforms[i],
                 theTransform,
-                [scalesArray[i] * (1 / theGUI.gridScale) * canvas.height / canvas.width,
-                 scalesArray[i] * (1 / theGUI.gridScale),
-                 scalesArray[i] * (1 / theGUI.gridScale)]);
-            mat4.translate(circleTransforms[i],
-                 circleTransforms[i],
-                  [(1 / scalesArray[i]) * canvas.width / canvas.height * translationPointsArr.x[i],
-                   (1 / scalesArray[i]) * translationPointsArr.y[i],
-                   (1 / scalesArray[i]) * theGUI.circleZ]);
+                [(1 / theGUI.gridScale) * canvas.height / canvas.width,
+                    (1 / theGUI.gridScale),(1 / theGUI.gridScale)]);
+            mat4.translate(XZVertLinesInstancesTransforms[i], XZVertLinesInstancesTransforms[i], [theGUI.circleX * canvas.width / canvas.height, theGUI.circleY, theGUI.circleZ]);
         }
         
         // Circle Instances Render
         gl.bindVertexArray(circlesVAO);
-        gl.useProgram(circlesProgram);
+        gl.useProgram(xzPlaneVerticalProgram);
 
-        gl.uniform1f(circlesProgramUTime, seconds);
-        gl.uniform2f(circlesProgramUResolution, gl.canvas.width, gl.canvas.height);
-        gl.uniformMatrix4fv(circlesProgramUView, false, view);
-        gl.uniformMatrix4fv(circlesProgramUProjection, false, projection);
+        gl.uniform1f(xzPlaneVerticalProgramUTime, seconds);
+        gl.uniform2f(xzPlaneVerticalProgramUResolution, gl.canvas.width, gl.canvas.height);
+        gl.uniformMatrix4fv(xzPlaneVerticalProgramUView, false, view);
+        gl.uniformMatrix4fv(xzPlaneVerticalProgramUProjection, false, projection);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, circleTransformsBuffer);
-        gl.bufferSubData(gl.ARRAY_BUFFER, 0, circleTransformsAtrribData);
+        gl.bindBuffer(gl.ARRAY_BUFFER, XZVertLinesAttribBuffer);
+        gl.bufferSubData(gl.ARRAY_BUFFER, 0, XZVertLinesTotalTransforms);
         gl.drawArraysInstanced(gl.TRIANGLES, 0, circleObj.numVerts, numCirclesToSort);
 
         // -------- Background grid and everything else
