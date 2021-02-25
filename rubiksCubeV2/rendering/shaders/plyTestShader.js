@@ -12,11 +12,8 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-uniform vec2 resolution;
-
 void main()
 {
-    vec3 pos = vertexPos;
     v_Col = vertexColor / 255.;
     gl_Position = projection * view * model * vec4(vertexPos, 1.0);
 }

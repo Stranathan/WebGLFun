@@ -20,17 +20,13 @@ class App
     {
         // load model/s & VAOs
         this.resourceManager.init();
-        // set gl state and pass renderables (a js object with some stuff)
-        this.renderer.init(this.resourceManager.renderables);
+        // set GL state and pass renderables
+        this.renderer.init(this.resourceManager.renderables, this.resourceManager.instancedRenderables);
     }
 
     update(seconds)
     {
-        this.processInput(seconds);
         this.render(seconds);
-    }
-    processInput(seconds)
-    {
     }
     render(seconds)
     {

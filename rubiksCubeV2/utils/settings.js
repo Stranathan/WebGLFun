@@ -6,6 +6,7 @@
 // -------- Misc --------
 var clearCol = [0.1568, 0.1568, 0.1568, 1.0]; // RGB 40 --> 40 / 250
 var bytesPerMatrix = 4 * 16;
+var numCubies = 9;
 
 // -------- glMatrix Lib Aliases --------
 var vec2 = glMatrix.vec2;
