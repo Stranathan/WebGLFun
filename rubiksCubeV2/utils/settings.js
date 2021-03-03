@@ -6,7 +6,10 @@
 // -------- Misc --------
 var clearCol = [0.1568, 0.1568, 0.1568, 1.0]; // RGB 40 --> 40 / 250
 var bytesPerMatrix = 4 * 16;
-var numCubies = 9;
+var rubicksLen = 3;
+var numCubies = Math.pow(rubicksLen, 3);
+var rubicksLenSquared = rubicksLen * rubicksLen;
+var deltaLen = 1.94;
 
 // -------- glMatrix Lib Aliases --------
 var vec2 = glMatrix.vec2;
@@ -21,6 +24,3 @@ var colorAttribLoc = 2;
 var modelAttribLoc = 3; // instance transform matrix 
 
 // -------- Camera Settings --------
-
-
-

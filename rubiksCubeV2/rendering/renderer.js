@@ -3,7 +3,7 @@ class Renderer
     constructor(gl)
     {
         this.gl = gl;
-        this.pos = vec4.fromValues(0, 10, -10., 1.);
+        this.pos = vec4.fromValues(2, 0, +25., 1.);
         this.up = vec4.fromValues(0.0, 1.0, 0.0, 1.0);
         this.target = vec3.fromValues(0.0, 0.0, 0.0);
         this.maxRadius = 20;

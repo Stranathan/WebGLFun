@@ -98,21 +98,23 @@ class ResourceManager
         }
     
         // ---------------- Make the transform attrib data
-        let startingX = -2;
-        let startingY = -2;
-        let startingZ = -2;
-
-        for (let i = 0; i < cubieModelData.length; i++)
+        // for each z layer
+        let cubeDataIndexOffset = 0;
+        for (let i = 0; i < cubieModelData.length / rubicksLenSquared; i++)
         {
-            let theTransform = mat4.create();
-            if(startingX == 2)
+            for(let j = 0; j < cubieModelData.length / rubicksLenSquared; j++)
             {
-                startingX = -2;
-                startingY += 2;
+                for( let k = 0; k < cubieModelData.length / rubicksLenSquared; k++)
+                {
+                    let tt = mat4.create();
+                    mat4.translate(cubieModelData[cubeDataIndexOffset], tt, [i * deltaLen -deltaLen, j * deltaLen -deltaLen, k * deltaLen -deltaLen]);
+                    // console.log("#-- " + cubeDataIndexOffset);
+                    // console.log(cubieModelData[cubeDataIndexOffset][12]);
+                    // console.log(cubieModelData[cubeDataIndexOffset][13])
+                    // console.log(cubieModelData[cubeDataIndexOffset][14]);
+                    cubeDataIndexOffset++;
+                }
             }
-            mat4.translate(cubieModelData[i], theTransform, [startingX, startingY, 0]);
-
-            startingX += 2;
         }
 
         // ---------------- Set the transform attrib
