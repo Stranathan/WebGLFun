@@ -1,0 +1,25 @@
+body 
+{
+    margin: 0;
+}
+#cc 
+{
+    width: 100vw;
+    height: 100vh;
+    display: block;
+}
+.container 
+{
+    position: relative;
+}
+#overlay
+{
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-family: monospace;
+    font-size: x-large;
+    padding: 1em;
+}

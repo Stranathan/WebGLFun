@@ -1,0 +1,48 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="style/rubicksCube.css">
+
+    <!-- Middleware -->
+    <script src="middleware/gl-matrix-min.js"></script>
+
+    <!-- Utils -->
+    <script src="utils/webGLBoilerplateUtils.js"></script>
+    <script src="utils/settings.js"></script>
+    <script src="utils/mathUtils.js"></script>
+    <script src="utils/plyParser.js"></script>
+    <script src="utils/geometry.js"></script>
+
+    <!-- Rendering -->
+    <script src="rendering/models/modelStrings.js"></script>
+    <script src="rendering/renderer.js"></script>
+    <script src="rendering/shaders/lineShader.js"></script>
+    <script src="rendering/shaders/gizmoShader.js"></script>
+    <script src="rendering/shaders/axisLinesShader.js"></script>
+
+    <!-- Scripts -->
+    <script src="scripts/app.js"></script>
+    <script src="scripts/inputManager.js"></script>
+    <script src="scripts/resourceManager.js"></script>
+    <script src="scripts/main.js" defer></script>
+    
+</head>
+
+<body>
+    <div class="container">
+        <canvas id="cc"></canvas>
+        <div id="overlay">
+          <div>t_ax: <span id="t_ax"></span></div>
+          <div>t_ay: <span id="t_ay"></span></div>
+          <div>t_az: <span id="t_az"></span></div>
+          <div>t_bx: <span id="t_bx"></span></div>
+          <div>t_by: <span id="t_by"></span></div>
+          <div>t_bz: <span id="t_bz"></span></div>
+        </div>
+    </div>
+
+</body>
+</body>
+</html>

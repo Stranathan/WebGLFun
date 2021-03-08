@@ -43,8 +43,6 @@ function draw() {
     leBox.B[1] = sliderY.value();
 
     // draw box and positions circles with labels:
-    fill("white");
-    rect(sliderX.value(), sliderY.value(), sideLength, sideLength);
     fill("black");
     ellipse(leBox.A[0], leBox.A[1], circRad, circRad);
     fill("black");
@@ -55,11 +53,11 @@ function draw() {
 
     // draw X and Y boundary planes:
     strokeWeight(3);
-    stroke(xLineCol);
+    stroke(yLineCol);
     line(leBox.A[0], windowHeight, leBox.A[0], 0);
     line(leBox.B[0], windowHeight, leBox.B[0], 0); 
     strokeWeight(3);
-    stroke(yLineCol);
+    stroke(xLineCol);
     line(0, leBox.A[1], windowWidth, leBox.A[1]);
     line(0, leBox.B[1], windowWidth, leBox.B[1]);
 
@@ -74,10 +72,10 @@ function draw() {
     let hitCheck = aabbRayIntersect(theRay, leBox);
 
     // t intersections;
-    fill("green")
+    fill("red")
     ellipse(theRay.ro[0] + hitCheck.min_tx * theRay.rd[0], theRay.ro[1] + hitCheck.min_tx * theRay.rd[1], circRad / 2);
     ellipse(theRay.ro[0] + hitCheck.other_tx * theRay.rd[0], theRay.ro[1] + hitCheck.other_tx * theRay.rd[1], circRad / 2);
-    fill("red")
+    fill("green")
     ellipse(theRay.ro[0] + hitCheck.min_ty * theRay.rd[0], theRay.ro[1] + hitCheck.min_ty * theRay.rd[1], circRad / 2);
     ellipse(theRay.ro[0] + hitCheck.other_ty * theRay.rd[0], theRay.ro[1] + hitCheck.other_ty * theRay.rd[1], circRad / 2);
 
@@ -89,8 +87,7 @@ function draw() {
     else{
         fill(noHitCol);
     }
-    ellipse(windowWidth - 125, windowHeight / 4 , 60);
-
+    rect(sliderX.value(), sliderY.value(), sideLength, sideLength);
     // 
     stroke("black");
     text("min_tx = " + String(hitCheck.min_tx), windowHeight / 4 , 70);
