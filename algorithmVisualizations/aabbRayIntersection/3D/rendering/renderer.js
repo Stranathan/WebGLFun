@@ -84,28 +84,32 @@ class Renderer
                 gl.bindBuffer(gl.ARRAY_BUFFER, this.renderables[i].vbo);
                 // this.renderables[i].fl32arr[0] = this.renderables[i].fl32arr[0] * Math.sin(seconds);
                 
-                // change ray origin
-                this.renderables[i].fl32arr[0] = 5 + 5 * Math.sin(seconds - 10);
-                this.renderables[i].fl32arr[1] = 10 + 5 * Math.sin(seconds);
-                this.renderables[i].fl32arr[2] = 10 + 5 * Math.cos(seconds);
+                // change line primitive's starting point
+                this.renderables[i].fl32arr[0] = theGUI.ro_x;
+                this.renderables[i].fl32arr[1] = theGUI.ro_y;
+                this.renderables[i].fl32arr[2] = theGUI.ro_z;
                 
                 let rd = vec3.create();
-                
-                vec3.subtract(rd, theOrigin, [this.renderables[i].fl32arr[0],  this.renderables[i].fl32arr[1],  this.renderables[i].fl32arr[2]]);
+                vec3.subtract(rd, [theGUI.target_x, theGUI.target_y, theGUI.target_z], [theGUI.ro_x, theGUI.ro_y, theGUI.ro_z]);
                 vec3.normalize(rd, rd);
 
-                this.renderables[i].fl32arr[3] = tt * rd[0];
-                this.renderables[i].fl32arr[4] = tt * rd[1];
-                this.renderables[i].fl32arr[5] = tt * rd[2];
+                theGUI.rd_x = rd[0];
+                theGUI.rd_y = rd[1];
+                theGUI.rd_z = rd[2];
+                
+                console.log("in ray:" + theGUI.rd_x);
+                // change the line primitive's end point
+                this.renderables[i].fl32arr[3] = theGUI.ro_x + theGUI.tt * theGUI.rd_x;
+                this.renderables[i].fl32arr[4] = theGUI.ro_y + theGUI.tt * theGUI.rd_y;
+                this.renderables[i].fl32arr[5] = theGUI.ro_z + theGUI.tt * theGUI.rd_z;
 
                 gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.renderables[i].fl32arr);
             }
             
             // ---- update gizmos
-            // hardcoded, change me (the ray is the 1st element in the renderables array)
             let intersectionObj = aabbRayIntersect(boxObj,
-                {ro: [this.renderables[1].fl32arr[0], this.renderables[1].fl32arr[1], this.renderables[1].fl32arr[2]],
-                    rd: [this.renderables[1].fl32arr[3], this.renderables[1].fl32arr[4], this.renderables[1].fl32arr[5]]
+                {ro: [theGUI.ro_x, theGUI.ro_y, theGUI.ro_z],
+                 rd: [theGUI.rd_x, theGUI.rd_y, theGUI.rd_z]
                 });
             this.t_ax_element.textContent = intersectionObj.t_ax.toFixed(2);
             this.t_ay_element.textContent = intersectionObj.t_ay.toFixed(2);
@@ -116,9 +120,10 @@ class Renderer
 
             if(this.renderables[i].tag == "xGizmoA")
             {
-                let gizmoTranslation = [this.renderables[1].fl32arr[0] + intersectionObj.t_ax * this.renderables[1].fl32arr[3],
-                                        this.renderables[1].fl32arr[1] + intersectionObj.t_ax * this.renderables[1].fl32arr[4],
-                                        this.renderables[1].fl32arr[2] + intersectionObj.t_ax * this.renderables[1].fl32arr[5]]
+                console.log("in gizmo:" + theGUI.rd_x);
+                let gizmoTranslation = [theGUI.ro_x + intersectionObj.t_ax * theGUI.rd_x,
+                                        theGUI.ro_y + intersectionObj.t_ax * theGUI.rd_y,
+                                        theGUI.ro_z + intersectionObj.t_ax * theGUI.rd_z]
 
                 let gizmoTransform = mat4.create();
                 mat4.translate(gizmoTransform, gizmoTransform, gizmoTranslation);
@@ -127,9 +132,9 @@ class Renderer
             }
             if(this.renderables[i].tag == "xGizmoB")
             {
-                let gizmoTranslation = [this.renderables[1].fl32arr[0] + intersectionObj.t_bx * this.renderables[1].fl32arr[3],
-                                        this.renderables[1].fl32arr[1] + intersectionObj.t_bx * this.renderables[1].fl32arr[4],
-                                        this.renderables[1].fl32arr[2] + intersectionObj.t_bx * this.renderables[1].fl32arr[5]]
+                let gizmoTranslation = [theGUI.ro_x + intersectionObj.t_bx * theGUI.rd_x,
+                                        theGUI.ro_y + intersectionObj.t_bx * theGUI.rd_y,
+                                        theGUI.ro_z + intersectionObj.t_bx * theGUI.rd_z]
 
                 let gizmoTransform = mat4.create();
                 mat4.translate(gizmoTransform, gizmoTransform, gizmoTranslation);
@@ -138,9 +143,9 @@ class Renderer
             }
             if(this.renderables[i].tag == "yGizmoA")
             {
-                let gizmoTranslation = [this.renderables[1].fl32arr[0] + intersectionObj.t_ay * this.renderables[1].fl32arr[3],
-                                        this.renderables[1].fl32arr[1] + intersectionObj.t_ay * this.renderables[1].fl32arr[4],
-                                        this.renderables[1].fl32arr[2] + intersectionObj.t_ay * this.renderables[1].fl32arr[5]]
+                let gizmoTranslation = [theGUI.ro_x + intersectionObj.t_ay * theGUI.rd_x,
+                                        theGUI.ro_y + intersectionObj.t_ay * theGUI.rd_y,
+                                        theGUI.ro_z + intersectionObj.t_ay * theGUI.rd_z]
 
                 let gizmoTransform = mat4.create();
                 mat4.translate(gizmoTransform, gizmoTransform, gizmoTranslation);
@@ -149,9 +154,9 @@ class Renderer
             }
             if(this.renderables[i].tag == "yGizmoB")
             {
-                let gizmoTranslation = [this.renderables[1].fl32arr[0] + intersectionObj.t_by * this.renderables[1].fl32arr[3],
-                                        this.renderables[1].fl32arr[1] + intersectionObj.t_by * this.renderables[1].fl32arr[4],
-                                        this.renderables[1].fl32arr[2] + intersectionObj.t_by * this.renderables[1].fl32arr[5]]
+                let gizmoTranslation = [theGUI.ro_x + intersectionObj.t_by * theGUI.rd_x,
+                                        theGUI.ro_y + intersectionObj.t_by * theGUI.rd_y,
+                                        theGUI.ro_z + intersectionObj.t_by * theGUI.rd_z]
 
                 let gizmoTransform = mat4.create();
                 mat4.translate(gizmoTransform, gizmoTransform, gizmoTranslation);
@@ -160,9 +165,9 @@ class Renderer
             }
             if(this.renderables[i].tag == "zGizmoA")
             {
-                let gizmoTranslation = [this.renderables[1].fl32arr[0] + intersectionObj.t_az * this.renderables[1].fl32arr[3],
-                                        this.renderables[1].fl32arr[1] + intersectionObj.t_az * this.renderables[1].fl32arr[4],
-                                        this.renderables[1].fl32arr[2] + intersectionObj.t_az * this.renderables[1].fl32arr[5]]
+                let gizmoTranslation = [theGUI.ro_x + intersectionObj.t_az * theGUI.rd_x,
+                                        theGUI.ro_y + intersectionObj.t_az * theGUI.rd_y,
+                                        theGUI.ro_z + intersectionObj.t_az * theGUI.rd_z]
 
                 let gizmoTransform = mat4.create();
                 mat4.translate(gizmoTransform, gizmoTransform, gizmoTranslation);
@@ -171,9 +176,9 @@ class Renderer
             }
             if(this.renderables[i].tag == "zGizmoB")
             {
-                let gizmoTranslation = [this.renderables[1].fl32arr[0] + intersectionObj.t_bz * this.renderables[1].fl32arr[3],
-                                        this.renderables[1].fl32arr[1] + intersectionObj.t_bz * this.renderables[1].fl32arr[4],
-                                        this.renderables[1].fl32arr[2] + intersectionObj.t_bz * this.renderables[1].fl32arr[5]]
+                let gizmoTranslation = [theGUI.ro_x + intersectionObj.t_bz * theGUI.rd_x,
+                                        theGUI.ro_y + intersectionObj.t_bz * theGUI.rd_y,
+                                        theGUI.ro_z + intersectionObj.t_bz * theGUI.rd_z]
 
                 let gizmoTransform = mat4.create();
                 mat4.translate(gizmoTransform, gizmoTransform, gizmoTranslation);
@@ -199,6 +204,8 @@ class Renderer
                         break;
                     case "projection":
                         this.gl.uniformMatrix4fv(this.renderables[i].uniformLocations[uniform], false, this.projection); //  ``
+                        break;
+                    case "hitCol":
                         break;
                     default:
                         console.log("some weird uniform was attached to the renderable and it doesn't know what to do");

@@ -12,7 +12,9 @@ var rubicksLenSquared = rubicksLen * rubicksLen;
 var deltaLen = 1.94;
 
 // ray stuff
-var tt = 10;
+var theRayUpdateCount = 0;
+var theXGizmoUpdateCOunt = 0;
+this.theGUI;
 var theOrigin = [0., 0., 0.,];
 var startingRayOrigin = [2, 2, 4];
 var boxObj = {A: [-1, -1, 1], B: [1, 1, -1]};

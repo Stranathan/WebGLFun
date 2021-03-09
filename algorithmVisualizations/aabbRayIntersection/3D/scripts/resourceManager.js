@@ -10,22 +10,31 @@ class ResourceManager
         this.instancedRenderables = [];
         this.renderables = [];
         this.gizmoPositions = [];
+        makeTheGUI();
     }
     init()
     {
-        var t_ax_element = document.querySelector("#t_ax");
-        var t_ay_element = document.querySelector("#t_ay");
-        var t_az_element = document.querySelector("#t_az");
-        var t_bx_element = document.querySelector("#t_bx");
-        var t_by_element = document.querySelector("#t_by");
-        var t_bz_element = document.querySelector("#t_bz");
+        // var t_ax_element = document.querySelector("#t_ax");
+        // var t_ay_element = document.querySelector("#t_ay");
+        // var t_az_element = document.querySelector("#t_az");
+        // var t_bx_element = document.querySelector("#t_bx");
+        // var t_by_element = document.querySelector("#t_by");
+        // var t_bz_element = document.querySelector("#t_bz");
 
         // ------------------ Shader Programs Init ----------------
+        var unitCubeProgram = createProgramFromSources(gl, unitCubeShaderVS, unitCubeShaderFS);
         var gizmoProgram = createProgramFromSources(gl, gizmoShaderVS, gizmoShaderFS);
         var rayProgram = createProgramFromSources(gl, lineShaderVS, lineShaderFS);
         var axisLinesProgram = createProgramFromSources(gl, axisLinesVS, axisLinesFS);
 
         // ------------------ Uniform locs Init ----------------
+        var unitCubeProgramUHitCol = gl.getUniformLocation(unitCubeProgram, "hitCol");
+        var unitCubeProgramUTime = gl.getUniformLocation(unitCubeProgram, "time");
+        var unitCubeProgramUResolution = gl.getUniformLocation(unitCubeProgram, "resolution");
+        var unitCubeProgramUModel = gl.getUniformLocation(unitCubeProgram, "model");
+        var unitCubeProgramUView = gl.getUniformLocation(unitCubeProgram, "view");
+        var unitCubeProgramUProjection = gl.getUniformLocation(unitCubeProgram, "projection");
+
         var gizmoProgramUTime = gl.getUniformLocation(gizmoProgram, "time");
         var gizmoProgramUResolution = gl.getUniformLocation(gizmoProgram, "resolution");
         var gizmoProgramUModel = gl.getUniformLocation(gizmoProgram, "model");
@@ -67,25 +76,24 @@ class ResourceManager
             vao: unitCubeVAO,
             primitiveType: gl.TRIANGLES,
             vertCount: thePlyVertCountObj.unitCubeVertCount,
-            program: gizmoProgram,
-            uniformLocations: {time: gizmoProgramUTime, 
-                                resolution: gizmoProgramUResolution,
-                                model: gizmoProgramUModel,
-                                projection: gizmoProgramUProjection,
-                                view: gizmoProgramUView
+            program: unitCubeProgram,
+            uniformLocations: {time: unitCubeProgramUTime, 
+                                resolution: unitCubeProgramUResolution,
+                                model: unitCubeProgramUModel,
+                                projection: unitCubeProgramUProjection,
+                                view: unitCubeProgramUView
                             }
             });
 
         // ------------------ Ray VAO Init ------------------
-        //let ro = vec3.fromValues(Math.floor(Math.random() * 10) - 5, Math.floor(Math.random() * -10) - 5, Math.floor(Math.random() * 10) - 5);
         let ro = startingRayOrigin;
         let rd = vec3.create();
         vec3.subtract(rd, theOrigin, ro);
         vec3.normalize(rd, rd);
 
         let theRay = [
-            ro[0], ro[1], ro[2],
-            tt * rd[0], tt * rd[1], tt * rd[2]
+            theGUI.ro_x, theGUI.ro_y, theGUI.ro_z,
+            theGUI.ro_x + theGUI.tt * rd, theGUI.ro_y + theGUI.tt * rd, theGUI.ro_z + theGUI.tt * rd
         ];
         let rayVertexData = new Float32Array(theRay);
         var theRayVAO = gl.createVertexArray();
@@ -105,7 +113,8 @@ class ResourceManager
             primitiveType: gl.LINES,
             vertCount: 2,
             program: rayProgram,
-            uniformLocations: {time: rayProgramUTime, 
+            uniformLocations: { hitCol: unitCubeProgramUHitCol,
+                                time: rayProgramUTime, 
                                 resolution: rayProgramUResolution,
                                 model: rayProgramUModel,
                                 projection: rayProgramUProjection,
@@ -117,12 +126,12 @@ class ResourceManager
         let rayObj = {ro: ro, rd: rd};
         let intersectionObj = aabbRayIntersect(boxObj, rayObj);
         
-        t_ax_element.textContent = intersectionObj.t_ax.toFixed(2);
-        t_ay_element.textContent = intersectionObj.t_ay.toFixed(2);
-        t_az_element.textContent = intersectionObj.t_az.toFixed(2);
-        t_bx_element.textContent = intersectionObj.t_bx.toFixed(2);
-        t_by_element.textContent = intersectionObj.t_by.toFixed(2);
-        t_bz_element.textContent = intersectionObj.t_bz.toFixed(2);
+        // t_ax_element.textContent = intersectionObj.t_ax.toFixed(2);
+        // t_ay_element.textContent = intersectionObj.t_ay.toFixed(2);
+        // t_az_element.textContent = intersectionObj.t_az.toFixed(2);
+        // t_bx_element.textContent = intersectionObj.t_bx.toFixed(2);
+        // t_by_element.textContent = intersectionObj.t_by.toFixed(2);
+        // t_bz_element.textContent = intersectionObj.t_bz.toFixed(2);
 
         plyParser(xGizmo);
         
@@ -307,10 +316,10 @@ class ResourceManager
         vertCount: thePlyVertCountObj.gizmoZVertCount,
         program: gizmoProgram,
         uniformLocations: {time: gizmoProgramUTime, 
-                    resolution: gizmoProgramUResolution,
-                    model: gizmoProgramUModel,
-                    projection: gizmoProgramUProjection,
-                    view: gizmoProgramUView
+                           resolution: gizmoProgramUResolution,
+                           model: gizmoProgramUModel,
+                           projection: gizmoProgramUProjection,
+                           view: gizmoProgramUView
                 }
         });    
 
