@@ -31,54 +31,54 @@ function aabbRayIntersect(aBox, aRay)
     let t_by = (aBox.B[1] - aRay.ro[1]) / aRay.rd[1];
     let t_bz = (aBox.B[2] - aRay.ro[2]) / aRay.rd[2];
 
-    // // order the t's from x coord
-    // let other_tx;
-    // let min_tx = Math.min(t_ax, t_bx);
-    // if(min_tx == t_ax)
-    // {
-    //     other_tx = t_bx;
-    // }
-    // else
-    // {
-    //     other_tx = t_ax;
-    // }
-    // // order the t's from y coord
-    // let other_ty;
-    // let min_ty = Math.min(t_ay, t_by);
-    // if(min_ty == t_ay)
-    // {
-    //     other_ty = t_by;
-    // }
-    // else
-    // {
-    //     other_ty = t_ay;
-    // }
+    let hit = false;
 
-    // // slab comparison
-    // let hit = false;    
-    // let max_t = Math.max(other_tx, other_ty);
-    // if(max_t == other_tx)
-    // {
-    //     if(other_ty <= other_tx && other_ty >= min_tx)
-    //     {
-    //         hit = true;
-    //     }
-    // }
-    // else
-    // {
-    //     if(other_tx >= min_ty && other_tx >= min_ty)
-    //     {
-    //         hit = true;
-    //     }
-    // }
+    let max_t, min_t, max_tx, min_tx, max_ty, min_ty, max_tz, min_tz;
+
+    max_tx = Math.max(t_ax, t_bx);
+    min_tx = (t_ax + t_bx) - max_tx;
     
-    // if(hit)
-    // {
-    //     return {min_tx: min_tx, min_ty: min_ty, other_tx: other_tx, other_ty: other_ty, check: true};
-    // }
-    // else
-    // {
-    //     return {min_tx: min_tx, min_ty: min_ty, other_tx: other_tx, other_ty: other_ty, check: false};
-    // }
-    return {t_ax : t_ax, t_ay : t_ay, t_az : t_az, t_bx : t_bx, t_by: t_by, t_bz : t_bz}
+    max_ty = Math.max(t_ay, t_by);
+    min_ty = (t_ay + t_by) - max_ty;
+
+    max_tz = Math.max(t_az, t_bz);
+    min_tz = (t_az + t_bz) - max_tz;
+
+    max_t = Math.max(max_tz, Math.max(max_tx, max_ty));
+
+    if(max_t == max_tz)
+    {
+        if (max_ty >= max_tx && max_tx >= min_ty && max_tx >= min_tz && max_ty >= min_tz)
+        {
+            hit = true;
+        }
+        else if (max_tx >= max_ty && max_ty >= min_tx && max_tx >= min_tz && max_ty >= min_tz)
+        {
+            hit = true;
+        }
+    }
+    else if(max_t == max_ty)
+    {
+        if (max_tz >= max_tx && max_tx >= min_tz && max_tx >= min_ty && max_tz >= min_ty)
+        {
+            hit = true;
+        }
+        else if(max_tx >= max_tz && max_tz >= min_tx && max_tx >= min_ty && max_tz >= min_ty)
+        {
+            hit = true;
+        }
+    }
+    else if(max_t == max_tx)
+    {
+        if (max_tz >= max_ty && max_ty >= min_tz && max_ty >= min_tx && max_tz >= min_tx)
+        {
+            hit = true;
+        }
+        else if(max_ty >= max_tz && max_tz >= min_ty && max_ty >= min_tx && max_tz >= min_tx)
+        {
+            hit = true;
+        }
+    }
+
+    return {t_ax : t_ax, t_ay : t_ay, t_az : t_az, t_bx : t_bx, t_by: t_by, t_bz : t_bz, hit: hit}
 }

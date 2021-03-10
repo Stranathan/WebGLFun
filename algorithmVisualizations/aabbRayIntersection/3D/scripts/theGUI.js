@@ -7,10 +7,11 @@ function makeTheGUI()
     vec3.subtract(rd, theOrigin, startingRayOrigin);
     vec3.normalize(rd, rd);
 
-    let t = 20;
+    let t = 50;
 
     theGUI = 
     {
+        // gui exposed vars
         ro_x: startingRayOrigin[0],
         ro_y: startingRayOrigin[1],
         ro_z: startingRayOrigin[2],
@@ -19,11 +20,13 @@ function makeTheGUI()
         target_y: theOrigin[1],
         target_z: theOrigin[2],
 
+        tt: t,
+
+        hitCol: [1., 0., 0., 0.],
+        // gui non exposed vars
         rd_x: rd[0],
         rd_y: rd[1],
         rd_z: rd[2],
-
-        tt: t
     };
     
     var gui = new dat.gui.GUI();
@@ -38,5 +41,6 @@ function makeTheGUI()
     gui.add(theGUI, 'target_y').min(-10.0).max(10.0).step(0.01);
     gui.add(theGUI, 'target_z').min(-10.0).max(10.0).step(0.01);
     
-    gui.add(theGUI, 'tt').min(-20.0).max(20.0).step(0.01);
+    gui.add(theGUI, 'tt').min(0).max(t).step(0.01);
+    gui.addColor(theGUI, 'hitCol');
 }

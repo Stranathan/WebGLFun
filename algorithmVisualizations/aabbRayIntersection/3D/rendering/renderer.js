@@ -8,7 +8,7 @@ class Renderer
         this.cr = vec3.create();
         this.radius = 25.0;
         this.maxRadius = this.radius * 2.0;
-        this.pos = vec4.fromValues(0, 0, this.radius, 1.);
+        this.pos = vec4.fromValues(this.radius / 2., this.radius / 3., this.radius / 2., 1.);
         this.up = vec4.fromValues(0.0, 1.0, 0.0, 1.0);
         this.target = vec3.fromValues(0.0, 0.0, 0.0);
         this.view = mat4.create();
@@ -97,7 +97,6 @@ class Renderer
                 theGUI.rd_y = rd[1];
                 theGUI.rd_z = rd[2];
                 
-                console.log("in ray:" + theGUI.rd_x);
                 // change the line primitive's end point
                 this.renderables[i].fl32arr[3] = theGUI.ro_x + theGUI.tt * theGUI.rd_x;
                 this.renderables[i].fl32arr[4] = theGUI.ro_y + theGUI.tt * theGUI.rd_y;
@@ -117,10 +116,18 @@ class Renderer
             this.t_bx_element.textContent = intersectionObj.t_bx.toFixed(2);
             this.t_by_element.textContent = intersectionObj.t_by.toFixed(2);
             this.t_bz_element.textContent = intersectionObj.t_bz.toFixed(2);
-
+            
+            if(intersectionObj.hit)
+            {
+                theGUI.hitCol[3] = 1.0;
+            }
+            else
+            {
+                theGUI.hitCol[3] = 0.;
+            }
+            console.log(theGUI.hitCol[3]);
             if(this.renderables[i].tag == "xGizmoA")
             {
-                console.log("in gizmo:" + theGUI.rd_x);
                 let gizmoTranslation = [theGUI.ro_x + intersectionObj.t_ax * theGUI.rd_x,
                                         theGUI.ro_y + intersectionObj.t_ax * theGUI.rd_y,
                                         theGUI.ro_z + intersectionObj.t_ax * theGUI.rd_z]
@@ -206,6 +213,7 @@ class Renderer
                         this.gl.uniformMatrix4fv(this.renderables[i].uniformLocations[uniform], false, this.projection); //  ``
                         break;
                     case "hitCol":
+                        this.gl.uniform4f(this.renderables[i].uniformLocations[uniform], theGUI.hitCol[0], theGUI.hitCol[1], theGUI.hitCol[2], theGUI.hitCol[3]);
                         break;
                     default:
                         console.log("some weird uniform was attached to the renderable and it doesn't know what to do");
