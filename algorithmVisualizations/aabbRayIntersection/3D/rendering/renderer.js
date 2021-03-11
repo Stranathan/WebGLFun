@@ -125,7 +125,6 @@ class Renderer
             {
                 theGUI.hitCol[3] = 0.;
             }
-            console.log(theGUI.hitCol[3]);
             if(this.renderables[i].tag == "xGizmoA")
             {
                 let gizmoTranslation = [theGUI.ro_x + intersectionObj.t_ax * theGUI.rd_x,
