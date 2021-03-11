@@ -18,7 +18,6 @@ function aabbRayIntersect(aBox, aRay)
         // if t_ay is infinite, we're aligned with the z axis axis
         if((t_ay == Infinity || t_ay == -Infinity) || (t_by == Infinity || t_by == -Infinity))
         {
-            console.log("here");
             let maxXCoord = Math.max(aBox.A[0], aBox.B[0]);
             let maxYCoord = Math.max(aBox.A[1], aBox.B[1]);
             let minXCoord = aBox.A[0] + aBox.B[0] - maxXCoord;
@@ -57,6 +56,7 @@ function aabbRayIntersect(aBox, aRay)
             }
         }
     }
+    // ---- Nearly aligned with y-axis
     if((t_az == Infinity || t_az == -Infinity) || (t_bz == Infinity || t_bz == -Infinity))
     {
         // // if t_ax is infinite, we're aligned with the y axis axis
@@ -100,7 +100,50 @@ function aabbRayIntersect(aBox, aRay)
             }
         }
     }
-    // ---- Nearly aligned with y-axis
+    // ---- Nearly aligned with x-axis
+    if((t_ay == Infinity || t_ay == -Infinity) || (t_by == Infinity || t_by == -Infinity))
+    {
+        // // if t_ax is infinite, we're aligned with the y axis axis
+        if((t_az == Infinity || t_az == -Infinity) || (t_bz == Infinity || t_bz == -Infinity))
+        {
+            let maxYCoord = Math.max(aBox.A[1], aBox.B[1]);
+            let maxZCoord = Math.max(aBox.A[2], aBox.B[2]);
+            let minYCoord = aBox.A[1] + aBox.B[1] - maxYCoord;
+            let minZCoord = aBox.A[2] + aBox.B[2] - maxZCoord;
+
+            if((aRay.ro[1] < maxYCoord && aRay.ro[1] > minYCoord)
+              && (aRay.ro[2] < maxZCoord && aRay.ro[2] > minZCoord))
+            {
+                hit = true;
+                return {t_ax : t_ax, t_ay : t_ay, t_az : t_az, t_bx : t_bx, t_by: t_by, t_bz : t_bz, hit: hit}
+            }
+        }
+       
+        max_tz = Math.max(t_az, t_bz);
+        min_tz = (t_az + t_bz) - max_tz;
+        max_tx = Math.max(t_ax, t_bx);
+        min_tx = (t_ax + t_bx) - max_tx;
+
+        max_t = Math.max(max_tx, max_tz);
+
+        // else
+        if(max_t == max_tz)
+        {
+            if(max_tx >= min_tz)
+            {
+                hit = true;
+                return {t_ax : t_ax, t_ay : t_ay, t_az : t_az, t_bx : t_bx, t_by: t_by, t_bz : t_bz, hit: hit}
+            }
+        } 
+        else
+        {
+            if(max_tz >= min_tx)
+            {
+                hit = true;
+                return {t_ax : t_ax, t_ay : t_ay, t_az : t_az, t_bx : t_bx, t_by: t_by, t_bz : t_bz, hit: hit}
+            }
+        }
+    }
     
     max_tx = Math.max(t_ax, t_bx);
     min_tx = (t_ax + t_bx) - max_tx;

@@ -71,12 +71,31 @@ class Renderer
             this.gl.drawArraysInstanced(this.instancedRenderables[i].primitiveType, 0, this.instancedRenderables[i].vertCount, this.instancedRenderables[i].numInstances);
         }
 
+        // // #----
+        // theGUI.lightPos[0] = theGUI.lightPos[0];
+        // theGUI.lightPos[1] = theGUI.lightPos[1];
+        // theGUI.lightPos[2] = theGUI.lightPos[2];
+        
         // Individual Draw Calls:
         for(let i in this.renderables)
         {
             this.gl.bindVertexArray(this.renderables[i].vao);
             this.gl.useProgram(this.renderables[i].program);
             
+            if(this.renderables[i].tag == "unitCube")
+            {
+                let transl = mat4.create();
+                // translate the rendering geometry
+                mat4.translate(this.renderables[i].transform, transl,
+                    [theGUI.translation_x, theGUI.translation_y, theGUI.translation_z]);
+                transl = mat4.create();
+                mat4.translate(transl, transl,
+                    [theGUI.translation_x, theGUI.translation_y, theGUI.translation_z]);
+                let tmp = vec4.fromValues(0, 0, 0, 1);
+                vec4.transformMat4(tmp, tmp, transl);
+                boxObj.A = [-1 + tmp[0], -1 + tmp[1], 1 + tmp[2]];
+                boxObj.B = [1 + tmp[0], 1 + tmp[1], -1 + tmp[2]];
+            }
             if(this.renderables[i].tag == "theRay")
             {
                 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Float32Array
@@ -117,6 +136,7 @@ class Renderer
             this.t_by_element.textContent = intersectionObj.t_by.toFixed(2);
             this.t_bz_element.textContent = intersectionObj.t_bz.toFixed(2);
             
+            // ---- Change hit shader uniform condition
             if(intersectionObj.hit)
             {
                 theGUI.hitCol[3] = 1.0;
@@ -213,6 +233,9 @@ class Renderer
                         break;
                     case "hitCol":
                         this.gl.uniform4f(this.renderables[i].uniformLocations[uniform], theGUI.hitCol[0], theGUI.hitCol[1], theGUI.hitCol[2], theGUI.hitCol[3]);
+                        break;
+                    case "lightPos":
+                        this.gl.uniform3f(this.renderables[i].uniformLocations[uniform], theGUI.lightPos[0], theGUI.lightPos[1], theGUI.lightPos[2]);
                         break;
                     default:
                         console.log("some weird uniform was attached to the renderable and it doesn't know what to do");

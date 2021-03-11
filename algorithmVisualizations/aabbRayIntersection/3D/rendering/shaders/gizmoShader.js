@@ -35,6 +35,7 @@ out vec4 fragColor;
 
 uniform vec2 resolution;
 uniform float time;
+uniform vec3 lightPos;
 
 void main()
 {
@@ -43,7 +44,7 @@ void main()
     vec3 vertex_normal;
     float cos_angle;
   
-    to_light = vec3(10., 10., 10.) - v_Vertex;
+    to_light = lightPos - v_Vertex;
     to_light = normalize( to_light );
   
     // The vertex's normal vector is being interpolated across the primitive

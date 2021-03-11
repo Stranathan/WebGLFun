@@ -91,6 +91,7 @@ class InputManager
             mat4.rotate(rotMat, rotMat, angle, this.mouseMoveRotionAxis);
             vec4.transformMat4(this.renderer.up, this.renderer.up, rotMat);
             vec4.transformMat4(this.renderer.pos, this.renderer.pos, rotMat);
+            // vec4.transformMat4(theGUI.lightPos, theGUI.lightPos, rotMat);
             
             // we need to get the angle per mouse move, --> set the vector from last
             // move to this vector so the next mouse move calculation is possible

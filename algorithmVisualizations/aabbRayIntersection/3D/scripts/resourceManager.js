@@ -30,6 +30,7 @@ class ResourceManager
         // ------------------ Uniform locs Init ----------------
         var unitCubeProgramUHitCol = gl.getUniformLocation(unitCubeProgram, "hitCol");
         var unitCubeProgramUTime = gl.getUniformLocation(unitCubeProgram, "time");
+        var unitCubeProgramULightPos = gl.getUniformLocation(unitCubeProgram, "lightPos");
         var unitCubeProgramUResolution = gl.getUniformLocation(unitCubeProgram, "resolution");
         var unitCubeProgramUModel = gl.getUniformLocation(unitCubeProgram, "model");
         var unitCubeProgramUView = gl.getUniformLocation(unitCubeProgram, "view");
@@ -37,6 +38,7 @@ class ResourceManager
 
         var gizmoProgramUTime = gl.getUniformLocation(gizmoProgram, "time");
         var gizmoProgramUResolution = gl.getUniformLocation(gizmoProgram, "resolution");
+        var gizmoProgramULightPos = gl.getUniformLocation(gizmoProgram, "lightPos");
         var gizmoProgramUModel = gl.getUniformLocation(gizmoProgram, "model");
         var gizmoProgramUView = gl.getUniformLocation(gizmoProgram, "view");
         var gizmoProgramUProjection = gl.getUniformLocation(gizmoProgram, "projection");
@@ -77,7 +79,8 @@ class ResourceManager
             primitiveType: gl.TRIANGLES,
             vertCount: thePlyVertCountObj.unitCubeVertCount,
             program: unitCubeProgram,
-            uniformLocations: { hitCol: unitCubeProgramUHitCol,
+            uniformLocations: { lightPos: unitCubeProgramULightPos,
+                                hitCol: unitCubeProgramUHitCol,
                                 time: unitCubeProgramUTime, 
                                 resolution: unitCubeProgramUResolution,
                                 model: unitCubeProgramUModel,
@@ -163,7 +166,8 @@ class ResourceManager
             primitiveType: gl.TRIANGLES,
             vertCount: thePlyVertCountObj.gizmoXVertCount,
             program: gizmoProgram,
-            uniformLocations: {time: gizmoProgramUTime, 
+            uniformLocations: { lightPos: gizmoProgramULightPos,
+                                time: gizmoProgramUTime, 
                                 resolution: gizmoProgramUResolution,
                                 model: gizmoProgramUModel,
                                 projection: gizmoProgramUProjection,
@@ -187,7 +191,8 @@ class ResourceManager
         primitiveType: gl.TRIANGLES,
         vertCount: thePlyVertCountObj.gizmoXVertCount,
         program: gizmoProgram,
-        uniformLocations: {time: gizmoProgramUTime, 
+        uniformLocations: { lightPos: gizmoProgramULightPos,
+                    time: gizmoProgramUTime, 
                     resolution: gizmoProgramUResolution,
                     model: gizmoProgramUModel,
                     projection: gizmoProgramUProjection,
@@ -227,7 +232,9 @@ class ResourceManager
         primitiveType: gl.TRIANGLES,
         vertCount: thePlyVertCountObj.gizmoYVertCount,
         program: gizmoProgram,
-        uniformLocations: {time: gizmoProgramUTime, 
+        uniformLocations: {
+                    lightPos: gizmoProgramULightPos,
+                    time: gizmoProgramUTime, 
                     resolution: gizmoProgramUResolution,
                     model: gizmoProgramUModel,
                     projection: gizmoProgramUProjection,
@@ -251,7 +258,9 @@ class ResourceManager
         primitiveType: gl.TRIANGLES,
         vertCount: thePlyVertCountObj.gizmoYVertCount,
         program: gizmoProgram,
-        uniformLocations: {time: gizmoProgramUTime, 
+        uniformLocations: {
+            lightPos: gizmoProgramULightPos,        
+            time: gizmoProgramUTime, 
                     resolution: gizmoProgramUResolution,
                     model: gizmoProgramUModel,
                     projection: gizmoProgramUProjection,
@@ -291,7 +300,9 @@ class ResourceManager
         primitiveType: gl.TRIANGLES,
         vertCount: thePlyVertCountObj.gizmoZVertCount,
         program: gizmoProgram,
-        uniformLocations: {time: gizmoProgramUTime, 
+        uniformLocations: {
+                    lightPos: gizmoProgramULightPos,
+                    time: gizmoProgramUTime, 
                     resolution: gizmoProgramUResolution,
                     model: gizmoProgramUModel,
                     projection: gizmoProgramUProjection,
@@ -315,7 +326,8 @@ class ResourceManager
         primitiveType: gl.TRIANGLES,
         vertCount: thePlyVertCountObj.gizmoZVertCount,
         program: gizmoProgram,
-        uniformLocations: {time: gizmoProgramUTime, 
+        uniformLocations: {lightPos: gizmoProgramULightPos,
+                           time: gizmoProgramUTime, 
                            resolution: gizmoProgramUResolution,
                            model: gizmoProgramUModel,
                            projection: gizmoProgramUProjection,
