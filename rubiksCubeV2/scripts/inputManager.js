@@ -4,7 +4,7 @@ class InputManager
     {
         this.gl = gl;
         this.renderer = aRenderer;
-       
+        this.selectionSwitch = false;
         this.firstMouseBtnRayCastSwitch = false;
         this.clickRayDirWorld = vec3.create();
 
@@ -37,8 +37,66 @@ class InputManager
         vec4.transformMat4(tmp, ray_eye, inverseViewMatrix);
         this.clickRayDirWorld = vec3.fromValues(tmp[0], tmp[1], tmp[2]);
 
+        vec3.normalize(this.clickRayDirWorld, this.clickRayDirWorld);
+        // check to see if it intersects the cube at all:
+        // see settings for cubeBoxObj
+        let intersectionObj = aabbRayIntersect(cubeBoxObj, {ro: this.renderer.pos, rd: this.clickRayDirWorld})
         
-        this.firstMouseBtnRayCastSwitch = true;
+        if(intersectionObj.hit)
+        {   
+            let hitIndices = [];         
+            if(!this.selectionSwitch)
+            {
+                this.selectionSwitch = true;
+                let hitCount = 0;
+                for(let i = 0; i < numCubies; i++)
+                {
+                    let A = [-1, -1, 1, 1];
+                    let B = [1, 1, -1, 1];
+                    vec4.transformMat4(A, A, this.renderer.instancedRenderables[0].attribMatrixData[i]);
+                    vec4.transformMat4(B, B, this.renderer.instancedRenderables[0].attribMatrixData[i]);
+                    
+                    let secondIntersectionObj = aabbRayIntersect({A: A, B: B}, {ro: this.renderer.pos, rd: this.clickRayDirWorld});
+                    if(secondIntersectionObj.hit)
+                    {
+                        hitCount++;
+                        hitIndices.push(i);
+                        if(hitCount >= 3)
+                        {
+                            // no need to do more than 3
+                            break;
+                        }
+                    }
+                }
+
+                let theSelectedIndex = hitIndices[0];
+                let shortest = biggest;
+                for(let i = 0; i < hitIndices.length; i++)
+                {
+                    //console.log(hitIndices[i]);
+                    let x = this.renderer.instancedRenderables[0].attribMatrixData[hitIndices[i]][12];
+                    let y = this.renderer.instancedRenderables[0].attribMatrixData[hitIndices[i]][13];
+                    let z = this.renderer.instancedRenderables[0].attribMatrixData[hitIndices[i]][14];
+                    let cubiePos = vec4.fromValues(x, y, z, 1);
+                    let dist = vec4.squaredDistance(cubiePos, this.renderer.pos);
+                    if(dist < shortest)
+                    {
+                        shortest = dist;
+                        theSelectedIndex = hitIndices[i];
+                    }
+                }
+                console.log(
+                    "#------------------------#\n" + 
+                    this.renderer.instancedRenderables[0].attribMatrixData[theSelectedIndex][12] + ", " +
+                    this.renderer.instancedRenderables[0].attribMatrixData[theSelectedIndex][13] + ", " +
+                    this.renderer.instancedRenderables[0].attribMatrixData[theSelectedIndex][14]
+                );
+            }
+        }
+        else
+        {
+            this.firstMouseBtnRayCastSwitch = true;
+        }
     }
     mouseMove = event => 
     {
@@ -91,6 +149,10 @@ class InputManager
     }
     mouseUp = e => 
     {
+        if(this.selectionSwitch)
+        {
+            this.selectionSwitch = false;
+        }
         if(this.firstMouseBtnRayCastSwitch == true)
         {
             this.firstMouseBtnRayCastSwitch = false;

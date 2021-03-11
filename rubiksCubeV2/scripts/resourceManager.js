@@ -149,6 +149,7 @@ class ResourceManager
         this.instancedRenderables.push(
             {tag: "cubie",
             vao: cubieVAO,
+            attribMatrixData: cubieModelData,
             primitiveType: gl.TRIANGLES,
             numInstances: numCubies,
             vertCount: thePlyVertCount,
