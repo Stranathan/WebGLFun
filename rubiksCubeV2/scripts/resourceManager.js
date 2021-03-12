@@ -121,7 +121,7 @@ class ResourceManager
         const cubieModelVBO = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, cubieModelVBO);
         //  gl.bufferData(gl.ARRAY_BUFFER, cubieModelAttribData.byteLength, gl.DYNAMIC_DRAW);
-        gl.bufferData(gl.ARRAY_BUFFER, cubieModelAttribData, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, cubieModelAttribData, gl.DYNAMIC_DRAW);
 
         // ---- if we need to change the transform data, can be done in real time if gl draw hint is set to gl.DYNAMIC_DRAW:
         // gl.bindBuffer(gl.ARRAY_BUFFER, cubieModelVBO);
@@ -146,10 +146,12 @@ class ResourceManager
             // this line says this attribute only changes for each 1 instance
             gl.vertexAttribDivisor(attribLocation, 1);
         }
+        // attribMatrixData: cubieModelData,
         this.instancedRenderables.push(
             {tag: "cubie",
             vao: cubieVAO,
             attribMatrixData: cubieModelData,
+            fl32: cubieModelAttribData,
             primitiveType: gl.TRIANGLES,
             numInstances: numCubies,
             vertCount: thePlyVertCount,

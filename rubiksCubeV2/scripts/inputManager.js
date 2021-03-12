@@ -7,6 +7,8 @@ class InputManager
         this.selectionSwitch = false;
         this.firstMouseBtnRayCastSwitch = false;
         this.clickRayDirWorld = vec3.create();
+        
+        this.theSelectedIndex;
 
         window.addEventListener( "mousedown", this.mouseDown);
         window.addEventListener( "mousemove", this.mouseMove);
@@ -43,11 +45,11 @@ class InputManager
         let intersectionObj = aabbRayIntersect(cubeBoxObj, {ro: this.renderer.pos, rd: this.clickRayDirWorld})
         
         if(intersectionObj.hit)
-        {   
-            let hitIndices = [];         
+        {          
             if(!this.selectionSwitch)
             {
                 this.selectionSwitch = true;
+                let hitIndices = [];
                 let hitCount = 0;
                 for(let i = 0; i < numCubies; i++)
                 {
@@ -61,15 +63,15 @@ class InputManager
                     {
                         hitCount++;
                         hitIndices.push(i);
-                        if(hitCount >= 3)
+                        if(hitCount >= rubicksLen)
                         {
-                            // no need to do more than 3
+                            // no need to do collect more than three hits (or however large the dimension of cube is)
                             break;
                         }
                     }
                 }
 
-                let theSelectedIndex = hitIndices[0];
+                this.theSelectedIndex = hitIndices[0];
                 let shortest = biggest;
                 for(let i = 0; i < hitIndices.length; i++)
                 {
@@ -82,15 +84,15 @@ class InputManager
                     if(dist < shortest)
                     {
                         shortest = dist;
-                        theSelectedIndex = hitIndices[i];
+                        this.theSelectedIndex = hitIndices[i];
                     }
                 }
-                console.log(
-                    "#------------------------#\n" + 
-                    this.renderer.instancedRenderables[0].attribMatrixData[theSelectedIndex][12] + ", " +
-                    this.renderer.instancedRenderables[0].attribMatrixData[theSelectedIndex][13] + ", " +
-                    this.renderer.instancedRenderables[0].attribMatrixData[theSelectedIndex][14]
-                );
+                // console.log(
+                //     "#------------------------#\n" + 
+                //     this.renderer.instancedRenderables[0].attribMatrixData[this.theSelectedIndex][12] + ", " +
+                //     this.renderer.instancedRenderables[0].attribMatrixData[this.theSelectedIndex][13] + ", " +
+                //     this.renderer.instancedRenderables[0].attribMatrixData[this.theSelectedIndex][14]
+                // );
             }
         }
         else
@@ -100,6 +102,7 @@ class InputManager
     }
     mouseMove = event => 
     {
+        // ---- Camera Rotation
         if(this.firstMouseBtnRayCastSwitch)
         {
             let mousePosX = event.offsetX;
@@ -142,6 +145,83 @@ class InputManager
             vec4.transformMat4(this.renderer.up, this.renderer.up, rotMat);
             vec4.transformMat4(this.renderer.pos, this.renderer.pos, rotMat);
             
+            // we need to get the angle per mouse move, --> set the vector from last
+            // move to this vector so the next mouse move calculation is possible
+            this.clickRayDirWorld = rayDirWorld;
+        }
+        // #---------- Rubiks Rotation ---------- #
+        if(this.selectionSwitch == true)
+        {
+            let mousePosX = event.offsetX;
+            mousePosX = (2. * mousePosX / gl.canvas.width - 1.);
+            let mousePosY = event.offsetY;
+            mousePosY = -1 * (2. * mousePosY / gl.canvas.height - 1.);
+
+            // #---------- RAY CASTING -------------#
+            // RAY IN NDC SPACE
+            let ray_clip = vec4.fromValues(mousePosX, mousePosY, -1.0, 1.0);
+            let inverseProjectionMatrix = mat4.create();
+            mat4.invert(inverseProjectionMatrix, this.renderer.projection);
+
+            vec4.transformMat4(ray_clip, ray_clip, inverseProjectionMatrix);
+            // we only needed to un-project the x,y part,
+            // so let's manually set the z, w part to mean "forwards, and not a point
+            let ray_eye = vec4.fromValues(ray_clip[0], ray_clip[1], -1.0, 0.0);
+
+            let inverseViewMatrix = mat4.create();
+            mat4.invert(inverseViewMatrix, this.renderer.view);
+            let tmp = vec4.create();
+            vec4.transformMat4(tmp, ray_eye, inverseViewMatrix);
+            let rayDirWorld = vec3.fromValues(tmp[0], tmp[1], tmp[2]);
+
+            let angle = vec3.angle(this.clickRayDirWorld, rayDirWorld);
+
+            let cubeMoveRotionAxis = vec3.create();
+            vec3.cross(cubeMoveRotionAxis, this.clickRayDirWorld, rayDirWorld);
+            vec3.normalize(cubeMoveRotionAxis, cubeMoveRotionAxis);
+
+            // get a basis vector for the rotation axis
+            let largestComponent = Math.max(Math.max(cubeMoveRotionAxis[0], cubeMoveRotionAxis[1]), cubeMoveRotionAxis[2]);
+            if(largestComponent == cubeMoveRotionAxis[0])
+            {
+                cubeMoveRotionAxis[0] = 1;
+                cubeMoveRotionAxis[1] = 0;
+                cubeMoveRotionAxis[2] = 0;
+            }
+            else if(largestComponent == cubeMoveRotionAxis[1])
+            {
+                cubeMoveRotionAxis[0] = 0;
+                cubeMoveRotionAxis[1] = 1;
+                cubeMoveRotionAxis[2] = 0;
+            }
+            else{
+                cubeMoveRotionAxis[0] = 0;
+                cubeMoveRotionAxis[1] = 0;
+                cubeMoveRotionAxis[2] = 1;
+            }
+
+            let rotMat = mat4.create();
+            mat4.rotate(rotMat, rotMat, angle, cubeMoveRotionAxis);
+
+            // go through cubie list and hit each that agrees with selectedIndex with the rotation matrix
+            for(let i = 0; i < numCubies; i++)
+            {
+                if(cubeMoveRotionAxis[0] != 0)
+                {
+                    if(this.renderer.instancedRenderables[0].attribMatrixData[i][12] == 
+                       this.renderer.instancedRenderables[0].attribMatrixData[this.theSelectedIndex][12])
+                    {
+                        mat4.multiply(this.renderer.instancedRenderables[0].attribMatrixData[i], rotMat, this.renderer.instancedRenderables[0].attribMatrixData[i]);
+                        for(let j = 0; j < 16; j++)
+                        {
+                            this.renderer.instancedRenderables[0].fl32[(i * 4 * 16) + j] = this.renderer.instancedRenderables[0].attribMatrixData[i][j];
+                        }
+                        gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.renderer.instancedRenderables[0].fl32);
+                    }
+                }
+                
+            }
+
             // we need to get the angle per mouse move, --> set the vector from last
             // move to this vector so the next mouse move calculation is possible
             this.clickRayDirWorld = rayDirWorld;
